@@ -109,4 +109,22 @@ export interface ApiClient {
    * Creates a new escrow-protected product listing with declared parcel weight.
    */
   createListing(payload: Partial<import('@/types').Listing>): Promise<import('@/types').Listing>;
+
+  /**
+   * GET /api/v1/orders/active
+   * Retrieves active orders currently in escrow.
+   */
+  getActiveOrders(): Promise<Order[]>;
+
+  /**
+   * GET /api/v1/orders/past
+   * Retrieves settled, refunded, or historical orders.
+   */
+  getPastOrders(): Promise<Order[]>;
+
+  /**
+   * POST /api/v1/demo/scenario
+   * Simulates full-stack escrow state transitions for hackathon evaluation.
+   */
+  triggerDemoScenario(scenario: import('@/types').DemoScenario): Promise<any>;
 }

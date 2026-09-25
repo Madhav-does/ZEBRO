@@ -1,14 +1,15 @@
-import { useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
+import { useActiveOrders, usePastOrders } from "@/hooks/useEscrow"
 import { TrackerView } from "@/features/tracker/TrackerView"
-import { ShieldCheck, Package, CheckCircle2, ExternalLink, Clock, Scale } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ShieldCheck, Package, CheckCircle2, ExternalLink, Scale } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function OrdersHubView() {
-  const { ordersSubTab, setOrdersSubTab, setIsReceiptOpen } = useAppStore()
+  const { ordersSubTab, setOrdersSubTab, setIsReceiptOpen, currentOrderId, setCurrentOrderId } = useAppStore()
+  const { data: activeOrders = [] } = useActiveOrders()
+  const { data: pastOrdersFromApi = [] } = usePastOrders()
 
-  const pastOrders = [
+  const defaultPastOrders = [
     {
       id: "ord_tl_882194",
       title: "Handmade Ceramic Mug & Saucer Set",
@@ -33,6 +34,21 @@ export function OrdersHubView() {
     }
   ]
 
+  const activeCount = Math.max(activeOrders.length, 1)
+  const pastOrdersList = pastOrdersFromApi.length > 0 
+    ? pastOrdersFromApi.map(o => ({
+        id: o.id,
+        title: o.product.title,
+        seller: o.seller.handle,
+        price: o.product.price + o.product.shippingFee,
+        image: o.product.images[0] || 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80',
+        status: o.escrowStatus === 'funds_released' ? 'Released to Seller' : o.escrowStatus,
+        date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        verifiedWeight: o.weightAudit.actualKg,
+        txHash: o.escrowVaultAddress ? `${o.escrowVaultAddress.slice(0, 6)}...${o.escrowVaultAddress.slice(-4)}` : '0x8f3a...b12a'
+      }))
+    : defaultPastOrders
+
   return (
     <div className="pb-24 pt-2 px-4 max-w-md mx-auto space-y-4">
       {/* Sub-tab Switcher: Active Escrow vs Past Orders */}
@@ -50,7 +66,7 @@ export function OrdersHubView() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span>Active Escrow (1)</span>
+          <span>Active Escrow ({activeCount})</span>
         </button>
 
         <button
@@ -63,13 +79,39 @@ export function OrdersHubView() {
           )}
         >
           <Package className="w-3.5 h-3.5" />
-          <span>Past Orders ({pastOrders.length})</span>
+          <span>Past Orders ({pastOrdersList.length})</span>
         </button>
       </div>
 
       {/* View Content */}
       {ordersSubTab === "active" ? (
         <div className="space-y-4">
+          {/* Active Orders List Pill Selector if multiple orders exist */}
+          {activeOrders.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {activeOrders.map((ord) => {
+                const isSelected = ord.id === currentOrderId
+                return (
+                  <button
+                    key={ord.id}
+                    onClick={() => setCurrentOrderId(ord.id)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl border text-[11px] font-semibold whitespace-nowrap transition-all flex items-center gap-1.5",
+                      isSelected
+                        ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                        : "bg-muted/40 border-border/50 text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span>{ord.orderNumber}</span>
+                    <span className="font-mono text-[10px] text-zinc-400">
+                      ${(ord.product.price + ord.product.shippingFee).toFixed(2)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
           {/* Active Order Summary Banner */}
           <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-card to-background border border-emerald-500/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -78,20 +120,22 @@ export function OrdersHubView() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-foreground">Order #TL-8829104</span>
+                  <span className="text-xs font-bold text-foreground">
+                    Order #{currentOrderId.replace(/^ord_tl_/, 'TL-').slice(0, 10).toUpperCase()}
+                  </span>
                   <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
                     PROTECTED
                   </span>
                 </div>
-                <p className="text-[11px] text-muted-foreground">Handmade Ceramic Dripper</p>
+                <p className="text-[11px] text-muted-foreground">Neutral Escrow Smart Vault Active</p>
               </div>
             </div>
 
-            <span className="text-sm font-mono font-bold text-emerald-400">$54.00</span>
+            <span className="text-xs font-mono font-bold text-emerald-400">Live FSM</span>
           </div>
 
           {/* Embedded Phase 1 Live Escrow Tracker */}
-          <TrackerView />
+          <TrackerView orderId={currentOrderId} />
         </div>
       ) : (
         <div className="space-y-3 pt-1">
@@ -99,7 +143,7 @@ export function OrdersHubView() {
             Settled Escrow Transactions
           </p>
 
-          {pastOrders.map((order) => (
+          {pastOrdersList.map((order) => (
             <div
               key={order.id}
               className="p-3.5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm space-y-3 shadow-xs"

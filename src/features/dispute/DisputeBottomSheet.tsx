@@ -22,7 +22,7 @@ import {
 import { cn } from "@/lib/utils"
 
 export function DisputeBottomSheet() {
-  const { isDisputeOpen, setIsDisputeOpen, setDemoScenario } = useAppStore()
+  const { isDisputeOpen, setIsDisputeOpen, setDemoScenario, currentOrderId } = useAppStore()
   const fileDisputeMutation = useFileDispute()
 
   const [selectedReason, setSelectedReason] = useState<string>("empty_box")
@@ -70,7 +70,7 @@ export function DisputeBottomSheet() {
   const handleSubmit = () => {
     fileDisputeMutation.mutate(
       {
-        orderId: "ord_tl_8829104",
+        orderId: currentOrderId || "ord_tl_8829104",
         reason: selectedReason as DisputeReason,
         description: description || "Weight deficit detected upon opening package.",
         evidenceImages: photos,

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
-import { DisputePayload } from '@/types';
+import { DisputePayload, Order } from '@/types';
 import { useAppStore } from '@/store/useAppStore';
 
 export const ESCROW_KEYS = {
@@ -8,6 +8,8 @@ export const ESCROW_KEYS = {
   product: (id: string) => ['product', id] as const,
   order: (id: string) => ['order', id] as const,
   weightAudit: (orderId: string) => ['weight-audit', orderId] as const,
+  activeOrders: ['orders', 'active'] as const,
+  pastOrders: ['orders', 'past'] as const,
 };
 
 export function useSeller(handleOrId: string = 'urban_ceramics') {
@@ -26,36 +28,62 @@ export function useProduct(productId: string = 'prod_ceramic_vase_01') {
   });
 }
 
-export function useOrder(orderId: string = 'ord_tl_8829104') {
+export function useOrder(orderId?: string) {
+  const storeOrderId = useAppStore((state) => state.currentOrderId);
+  const targetId = orderId || storeOrderId || 'ord_tl_8829104';
   const scenario = useAppStore((state) => state.demoScenario);
   
   return useQuery({
     // Include scenario in key to trigger reactive refetch on demo scenario toggle
-    queryKey: [...ESCROW_KEYS.order(orderId), scenario],
-    queryFn: () => api.getOrder(orderId),
-    staleTime: 10 * 1000,
+    queryKey: [...ESCROW_KEYS.order(targetId), scenario],
+    queryFn: () => api.getOrder(targetId),
+    staleTime: 5 * 1000,
+    refetchInterval: 5000, // Poll state automatically so backend FSM events update live
   });
 }
 
-export function useWeightAudit(orderId: string = 'ord_tl_8829104') {
+export function useWeightAudit(orderId?: string) {
+  const storeOrderId = useAppStore((state) => state.currentOrderId);
+  const targetId = orderId || storeOrderId || 'ord_tl_8829104';
   const scenario = useAppStore((state) => state.demoScenario);
 
   return useQuery({
-    queryKey: [...ESCROW_KEYS.weightAudit(orderId), scenario],
-    queryFn: () => api.getWeightAudit(orderId),
+    queryKey: [...ESCROW_KEYS.weightAudit(targetId), scenario],
+    queryFn: () => api.getWeightAudit(targetId),
+    staleTime: 5 * 1000,
+  });
+}
+
+export function useActiveOrders() {
+  return useQuery({
+    queryKey: ESCROW_KEYS.activeOrders,
+    queryFn: () => api.getActiveOrders(),
+    staleTime: 5 * 1000,
+    refetchInterval: 10000,
+  });
+}
+
+export function usePastOrders() {
+  return useQuery({
+    queryKey: ESCROW_KEYS.pastOrders,
+    queryFn: () => api.getPastOrders(),
+    staleTime: 15 * 1000,
   });
 }
 
 export function useCreateOrder() {
   const queryClient = useQueryClient();
   const setActiveTab = useAppStore((state) => state.setActiveTab);
+  const setCurrentOrderId = useAppStore((state) => state.setCurrentOrderId);
 
   return useMutation({
     mutationFn: (payload: { productId: string; shippingAddress: string; paymentMethod: string }) =>
       api.createOrder(payload),
-    onSuccess: (order) => {
+    onSuccess: (order: Order) => {
+      setCurrentOrderId(order.id);
       queryClient.setQueryData([...ESCROW_KEYS.order(order.id), useAppStore.getState().demoScenario], order);
       queryClient.invalidateQueries({ queryKey: ['order'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
       // Switch to tracker tab to show live escrow
       setActiveTab('tracker');
     },
@@ -69,6 +97,7 @@ export function useReleaseEscrow() {
     mutationFn: (orderId: string) => api.releaseEscrow(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
   });
 }
@@ -81,6 +110,7 @@ export function useFileDispute() {
     mutationFn: (payload: DisputePayload) => api.fileDispute(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
       setDisputeOpen(false);
     },
   });

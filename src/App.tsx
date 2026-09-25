@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useAppStore } from "@/store/useAppStore"
 import { GlobalHeader } from "@/components/shared/GlobalHeader"
@@ -24,9 +24,18 @@ const queryClient = new QueryClient({
 })
 
 function MainContent() {
-  const { activeTab, setActiveTab, demoScenario } = useAppStore()
+  const { activeTab, setActiveTab, demoScenario, backendConnected, setBackendConnected } = useAppStore()
   // Mode switcher: Default is 'phase2' (Instagram Marketplace Shell), with 'phase1' (Isolated Checkout & Tracker)
   const [appMode, setAppMode] = useState<"phase2" | "phase1">("phase2")
+
+  useEffect(() => {
+    fetch("http://localhost:4000/health")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "ok") setBackendConnected(true)
+      })
+      .catch(() => setBackendConnected(false))
+  }, [setBackendConnected])
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-emerald-500/20 selection:text-emerald-400">
@@ -35,9 +44,22 @@ function MainContent() {
       {/* Mode Switcher Bar for Hackathon Judges */}
       <aside aria-label="Demo Phase Switcher" className="w-full bg-muted/70 border-b border-border/40 py-1.5 px-4 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-md mx-auto flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="font-semibold text-foreground text-[11px]">TrustLink Demo:</span>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="font-semibold text-foreground text-[11px]">TrustLink:</span>
+            </div>
+
+            {backendConnected ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Phase 3 Live
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-zinc-800 border border-border text-zinc-400">
+                Mock Mode
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1 bg-background/80 p-0.5 rounded-lg border border-border/60">

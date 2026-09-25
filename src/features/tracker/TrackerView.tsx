@@ -14,9 +14,9 @@ import {
   Lock,
 } from "lucide-react"
 
-export function TrackerView() {
+export function TrackerView({ orderId }: { orderId?: string } = {}) {
   const { demoScenario, setIsReceiptOpen } = useAppStore()
-  const { data: order, isLoading, isError, refetch } = useOrder("ord_tl_8829104")
+  const { data: order, isLoading, isError, refetch } = useOrder(orderId)
 
   if (isLoading) {
     return (

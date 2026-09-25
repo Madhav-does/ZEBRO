@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { api } from "@/api"
 import { useAppStore } from "@/store/useAppStore"
 import { DemoScenario } from "@/types"
 import {
@@ -27,6 +29,22 @@ export function DemoModeBadge() {
     setActiveTab,
     setIsReceiptOpen,
   } = useAppStore()
+
+  const queryClient = useQueryClient()
+
+  const handleSelectScenario = async (scId: DemoScenario) => {
+    setDemoScenario(scId)
+    setActiveTab("tracker")
+    try {
+      await api.triggerDemoScenario(scId)
+    } catch (err) {
+      console.warn("Could not sync scenario with backend:", err)
+    }
+    queryClient.invalidateQueries({ queryKey: ["order"] })
+    queryClient.invalidateQueries({ queryKey: ["weight-audit"] })
+    queryClient.invalidateQueries({ queryKey: ["marketplace"] })
+    queryClient.invalidateQueries({ queryKey: ["orders"] })
+  }
 
   const toggleOfflineSimulation = () => setOfflineSimulated(!isOfflineSimulated)
   const toggleSlowNetwork = () => setSimulatingSlowNetwork(!isSimulatingSlowNetwork)
@@ -92,10 +110,7 @@ export function DemoModeBadge() {
               return (
                 <button
                   key={sc.id}
-                  onClick={() => {
-                    setDemoScenario(sc.id)
-                    setActiveTab("tracker")
-                  }}
+                  onClick={() => handleSelectScenario(sc.id)}
                   className={cn(
                     "w-full text-left p-2.5 rounded-xl border text-xs transition-all flex flex-col gap-1",
                     isSelected

@@ -42,6 +42,10 @@ interface AppState {
   setExploreCategory: (cat: string) => void;
   exploreSearchQuery: string;
   setExploreSearchQuery: (query: string) => void;
+  currentOrderId: string;
+  setCurrentOrderId: (id: string) => void;
+  backendConnected: boolean;
+  setBackendConnected: (connected: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -104,4 +108,8 @@ export const useAppStore = create<AppState>((set) => ({
   setExploreCategory: (exploreCategory) => set({ exploreCategory }),
   exploreSearchQuery: '',
   setExploreSearchQuery: (exploreSearchQuery) => set({ exploreSearchQuery }),
+  currentOrderId: 'ord_tl_8829104',
+  setCurrentOrderId: (currentOrderId) => set({ currentOrderId }),
+  backendConnected: false,
+  setBackendConnected: (backendConnected) => set({ backendConnected }),
 }));

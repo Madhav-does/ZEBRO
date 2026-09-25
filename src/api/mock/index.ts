@@ -231,6 +231,23 @@ export class MockApiClient implements ApiClient {
     currentListings = [newListing, ...currentListings];
     return newListing;
   }
+
+  async getActiveOrders(): Promise<Order[]> {
+    await simulateNetworkConditions();
+    const scenario = useAppStore.getState().demoScenario;
+    if (!currentOrder) currentOrder = getMockOrder(scenario);
+    return [currentOrder];
+  }
+
+  async getPastOrders(): Promise<Order[]> {
+    await simulateNetworkConditions();
+    return [];
+  }
+
+  async triggerDemoScenario(scenario: import('@/types').DemoScenario): Promise<any> {
+    currentOrder = getMockOrder(scenario);
+    return { scenario, order: currentOrder };
+  }
 }
 
 let currentListings = [...mockListings];

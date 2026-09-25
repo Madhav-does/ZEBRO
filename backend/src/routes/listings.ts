@@ -57,15 +57,18 @@ export async function listingRoutes(fastify: FastifyInstance) {
     return items.map((l) => formatListing(l));
   });
 
-  // GET /listings/:id
-  fastify.get('/listings/:id', async (request: FastifyRequest<{ Params: { id: string } }>) => {
+  // GET /listings/:id and GET /products/:id (Frontend alias)
+  const handleGetListingById = async (request: FastifyRequest<{ Params: { id: string } }>) => {
     const item = await prisma.listing.findUnique({
       where: { id: request.params.id },
       include: { seller: true },
     });
     if (!item) throw new NotFoundError('Listing', request.params.id);
     return formatListing(item);
-  });
+  };
+
+  fastify.get('/listings/:id', handleGetListingById);
+  fastify.get('/products/:id', handleGetListingById);
 
   // POST /listings
   fastify.post('/listings', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -129,6 +132,7 @@ function formatListing(l: any) {
     description: l.description,
     price: l.priceCents / 100,
     shippingFee: 0.0,
+    buyerProtectionFee: 0.0,
     images,
     category: l.category,
     seller: {
