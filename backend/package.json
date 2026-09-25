@@ -1,0 +1,44 @@
+{
+  "name": "trustlink-backend",
+  "version": "1.0.0",
+  "description": "TrustLink Phase 3 Backend Service - Escrow & Anti-Fraud State Machine",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:push": "prisma db push",
+    "seed": "tsx src/seed.ts",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "fintech",
+    "escrow",
+    "fraud-prevention",
+    "fastify",
+    "prisma",
+    "fsm"
+  ],
+  "author": "TrustLink Team",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@prisma/client": "^6.4.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "nanoid": "^5.0.9",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "prisma": "^6.4.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
+  }
+}

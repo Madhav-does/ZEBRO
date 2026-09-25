@@ -1,0 +1,116 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  handle            String   @unique
+  role              String   // "buyer" | "seller"
+  kycVerified       Boolean  @default(false)   // mocked
+  trustTier         Int      @default(1)       // 1, 2, 3
+  cleanOrderCount   Int      @default(0)
+  disputeCount      Int      @default(0)
+  stripeAccountId   String?                    // mocked Connect acct
+  createdAt         DateTime @default(now())
+
+  listings          Listing[]
+  buyerOrders       Order[]   @relation("BuyerOrders")
+  sellerOrders      Order[]   @relation("SellerOrders")
+}
+
+model Listing {
+  id                  String   @id @default(cuid())
+  sellerId            String
+  seller              User     @relation(fields: [sellerId], references: [id])
+  title               String
+  description         String
+  priceCents          Int
+  declaredWeightG     Int                          // critical for telemetry
+  imageUrls           String                       // JSON array as string
+  category            String
+  status              String   @default("active")  // active | paused | sold
+  createdAt           DateTime @default(now())
+
+  orders              Order[]
+}
+
+model Order {
+  id                     String   @id @default(cuid())
+  buyerId                String
+  sellerId               String
+  listingId              String
+  buyer                  User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller                 User     @relation("SellerOrders", fields: [sellerId], references: [id])
+  listing                Listing  @relation(fields: [listingId], references: [id])
+
+  status                 String   // see FSM states below
+  totalCents             Int
+  platformFeeCents       Int
+  transferGroup          String   @unique              // "order_<id>"
+  stripePaymentIntentId  String?                       // mocked
+  stripeTransferId       String?                       // mocked
+
+  declaredWeightG        Int
+  scannedWeightG         Int?
+  weightDeltaG           Int?
+  weightAuditResult      String?  // "MATCH" | "ANOMALY" | null
+
+  easypostTrackerId      String?                       // mocked
+  carrier                String?  // "USPS"
+
+  deliveredAt            DateTime?
+  inspectionDeadline     DateTime?
+  releasedAt             DateTime?
+  frozenAt               DateTime?
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  events                 EscrowEvent[]
+  dispute                Dispute?
+}
+
+model EscrowEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  eventType   String   // PAYMENT_LOCKED | WEIGHT_SCAN | WEIGHT_MATCH | WEIGHT_ANOMALY |
+                       // IN_TRANSIT | DELIVERED | INSPECTION_STARTED | FUNDS_RELEASED |
+                       // ESCROW_FROZEN | DISPUTE_OPENED | REFUNDED
+  payload     String   // JSON
+  hash        String   // sha256(payload + prevHash) — tamper-evident chain
+  createdAt   DateTime @default(now())
+}
+
+model Dispute {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id])
+  reason        String   // "empty_box" | "fake_item" | "broken" | "wrong_item" | "not_received" | "other"
+  evidenceUrls  String   // JSON array
+  status        String   @default("OPEN") // OPEN | SELLER_RESPONDED | ARBITRATION | RESOLVED_REFUND | RESOLVED_RELEASE
+  createdAt     DateTime @default(now())
+  resolvedAt    DateTime?
+}
+
+model IdempotencyKey {
+  key         String   @id
+  response    String   // JSON of the original response
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+}
+
+model PendingTimer {
+  id           String   @id @default(cuid())
+  orderId      String
+  firesAt      DateTime
+  action       String   // "RELEASE_ESCROW" | "AUTO_REFUND"
+  processed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
