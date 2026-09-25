@@ -54,6 +54,9 @@ export function RecentlyProtectedTicker() {
                 <img
                   src={item.itemImage}
                   alt={item.itemTitle}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=128&h=128&fit=crop&q=80"
+                  }}
                   className="w-14 h-14 rounded-full object-cover"
                 />
               </div>

@@ -121,7 +121,10 @@ export function InstagramShell() {
           </div>
 
           <div className="p-4">
-            <CheckoutView />
+            <CheckoutView
+              listing={activeListing}
+              onComplete={() => setCheckoutModalOpen(false)}
+            />
           </div>
         </SheetContent>
       </Sheet>

@@ -156,7 +156,10 @@ export type ListingCategory =
   | 'Prints'
   | 'Jewelry'
   | 'Home'
-  | 'Vintage';
+  | 'Vintage'
+  | 'Watches'
+  | 'Tech'
+  | 'Leather Goods';
 
 export interface Listing {
   id: string;

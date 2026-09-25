@@ -152,6 +152,9 @@ export function OrdersHubView() {
                 <img
                   src={order.image}
                   alt={order.title}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80"
+                  }}
                   className="w-14 h-14 rounded-xl object-cover border border-border/50 shrink-0"
                 />
 

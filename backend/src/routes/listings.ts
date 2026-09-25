@@ -21,9 +21,9 @@ const createListingSchema = z.object({
 export async function listingRoutes(fastify: FastifyInstance) {
   // GET /listings (and /api/v1/listings)
   fastify.get('/listings', async (request: FastifyRequest<{
-    Querystring: { category?: string; q?: string; tier?: string; verifiedOnly?: string };
+    Querystring: { category?: string; q?: string; tier?: string; verifiedOnly?: string; limit?: string; page?: string; offset?: string };
   }>) => {
-    const { category, q, tier, verifiedOnly } = request.query;
+    const { category, q, tier, verifiedOnly, limit, page, offset } = request.query;
 
     const where: any = { status: 'active' };
 
@@ -48,10 +48,19 @@ export async function listingRoutes(fastify: FastifyInstance) {
       where.seller = { ...where.seller, kycVerified: true };
     }
 
+    const take = limit ? parseInt(limit, 10) : undefined;
+    const skip = offset
+      ? parseInt(offset, 10)
+      : page && take
+      ? (parseInt(page, 10) - 1) * take
+      : undefined;
+
     const items = await prisma.listing.findMany({
       where,
       include: { seller: true },
       orderBy: { createdAt: 'desc' },
+      take,
+      skip,
     });
 
     return items.map((l) => formatListing(l));

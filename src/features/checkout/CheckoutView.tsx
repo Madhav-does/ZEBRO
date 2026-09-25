@@ -1,4 +1,5 @@
 import { useSeller, useProduct } from "@/hooks/useEscrow"
+import { Listing, Product, Seller } from "@/types"
 import { SellerProfileHeader } from "./SellerProfileHeader"
 import { ProductCard } from "./ProductCard"
 import { BentoEscrowGuarantee } from "./BentoEscrowGuarantee"
@@ -7,13 +8,35 @@ import { CheckoutCTA } from "./CheckoutCTA"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Instagram, AlertCircle, RefreshCw } from "lucide-react"
 
-export function CheckoutView() {
-  const { data: seller, isLoading: isSellerLoading, isError: isSellerError, refetch: refetchSeller } =
-    useSeller("seller_001")
-  const { data: product, isLoading: isProductLoading, isError: isProductError, refetch: refetchProduct } =
-    useProduct("prod_001")
+interface CheckoutViewProps {
+  listing?: Listing | null
+  onComplete?: () => void
+}
 
-  if (isSellerLoading || isProductLoading) {
+export function CheckoutView({ listing, onComplete }: CheckoutViewProps = {}) {
+  // If no listing passed (Phase 1 isolated tab), query default item from SQLite
+  const { data: defaultSeller, isLoading: isSellerLoading, isError: isSellerError, refetch: refetchSeller } =
+    useSeller(listing?.seller.handle || "urban_ceramics")
+  const { data: defaultProduct, isLoading: isProductLoading, isError: isProductError, refetch: refetchProduct } =
+    useProduct(listing?.id || "prod_ceramic_vase_01")
+
+  const seller: Seller | undefined = listing?.seller || defaultSeller
+  const product: Product | undefined = listing
+    ? {
+        id: listing.id,
+        title: listing.title,
+        subtitle: listing.subtitle || `${listing.category} collection piece`,
+        description: listing.description,
+        price: listing.price,
+        shippingFee: listing.shippingFee ?? 0.0,
+        buyerProtectionFee: 0.0,
+        images: listing.images && listing.images.length > 0 ? listing.images : ['https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=800&q=80'],
+        category: listing.category,
+        declaredWeightKg: listing.declaredWeightKg,
+      }
+    : defaultProduct
+
+  if (!listing && (isSellerLoading || isProductLoading)) {
     return (
       <div className="space-y-4 py-2">
         <Skeleton className="h-28 w-full rounded-3xl" />
@@ -28,7 +51,7 @@ export function CheckoutView() {
     )
   }
 
-  if (isSellerError || isProductError || !seller || !product) {
+  if (!seller || !product) {
     return (
       <div className="p-8 text-center rounded-3xl border border-destructive/30 bg-destructive/5 space-y-4 my-6">
         <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
@@ -54,7 +77,7 @@ export function CheckoutView() {
     )
   }
 
-  const shippingCost = 12.0
+  const shippingCost = product.shippingFee ?? 0.0
   const totalAmount = product.price + shippingCost
 
   return (
@@ -96,6 +119,7 @@ export function CheckoutView() {
         productId={product.id}
         sellerId={seller.id}
         totalAmount={totalAmount}
+        onSuccessCallback={onComplete}
       />
     </div>
   )

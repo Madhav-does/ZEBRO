@@ -8,12 +8,14 @@ interface CheckoutCTAProps {
   productId: string
   sellerId: string
   totalAmount: number
+  onSuccessCallback?: () => void
 }
 
 export function CheckoutCTA({
   productId,
   sellerId,
   totalAmount,
+  onSuccessCallback,
 }: CheckoutCTAProps) {
   const { setActiveTab } = useAppStore()
   const createOrderMutation = useCreateOrder()
@@ -30,6 +32,7 @@ export function CheckoutCTA({
         onSuccess: () => {
           setIsSuccess(true)
           setTimeout(() => {
+            onSuccessCallback?.()
             setActiveTab("tracker")
             setIsSuccess(false)
           }, 800)

@@ -21,10 +21,12 @@ export function ProductCard({ product }: ProductCardProps) {
     )
   }
 
-  const shippingCost = 12.0
+  const shippingCost = product.shippingFee ?? 0.0
   const escrowFeeOriginal = 4.5
   const escrowFeeActual = 0.0 // Sponsored free protection
   const total = product.price + shippingCost + escrowFeeActual
+
+  const fallbackImage = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=800&q=80"
 
   return (
     <div className="rounded-2xl sm:rounded-3xl border border-border/80 bg-card/60 overflow-hidden backdrop-blur-md shadow-sm">
@@ -33,8 +35,11 @@ export function ProductCard({ product }: ProductCardProps) {
         <AnimatePresence initial={false} mode="wait">
           <motion.img
             key={currentImageIndex}
-            src={product.images[currentImageIndex]}
+            src={product.images[currentImageIndex] || fallbackImage}
             alt={product.title}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = fallbackImage
+            }}
             className="w-full h-full object-cover"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
