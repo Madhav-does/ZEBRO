@@ -72,12 +72,14 @@ export async function buildApp() {
   });
 
   // 3. Health Check
-  app.get('/health', async () => ({
+  const healthHandler = async () => ({
     status: 'ok',
     service: 'trustlink-escrow-backend',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
-  }));
+  });
+  app.get('/health', healthHandler);
+  app.get('/api/v1/health', healthHandler);
 
   // 4. Register Route Modules
   const registerRoutes = async (instance: any) => {
