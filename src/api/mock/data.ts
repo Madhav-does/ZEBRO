@@ -1,0 +1,512 @@
+import {
+  Seller,
+  Product,
+  Order,
+  DemoScenario,
+  Listing,
+  RecentlyProtectedItem,
+  PlatformFraudStats,
+  Storefront,
+  Payout,
+  SellerAnalytics,
+  Thread,
+} from '@/types';
+
+export const mockSeller: Seller = {
+  id: 'seller_urban_ceramics',
+  handle: 'urban_ceramics',
+  name: 'Maya Lin Studios',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&h=256&q=80',
+  verifiedCreator: true,
+  tier: 'Tier 2 Seller',
+  ordersCount: 48,
+  disputesCount: 0,
+  riskScore: 'low',
+  riskScoreNum: 98,
+  riskFactors: [
+    'Government ID & Biometric Liveness KYC Verified',
+    '0 Chargebacks or Unresolved Disputes Across 48 Orders',
+    'Mandatory Postal Scale Weight Audit Pre-Authorized',
+    'Instagram Account Linked (@urban_ceramics, > 3 Years Old)',
+  ],
+  memberSince: 'March 2023',
+  instagramFollowers: '34.8K',
+  kycVerifiedAt: '2023-04-12T10:00:00Z',
+};
+
+export const mockProduct: Product = {
+  id: 'prod_ceramic_vase_01',
+  title: 'Handcrafted Ceramic Vase — Matte White',
+  subtitle: 'Wheel-thrown stoneware with raw mineral glaze',
+  description: 'Fired to cone 10 reduction in our Portland studio. Non-porous, waterproof, and designed to house heavy floral arrangements with a weighted organic base.',
+  price: 85.00,
+  shippingFee: 0.00,
+  buyerProtectionFee: 0.00,
+  declaredWeightKg: 1.20,
+  category: 'Ceramics & Decor',
+  images: [
+    'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?auto=format&fit=crop&w=800&q=80',
+  ],
+};
+
+export function getMockOrder(scenario: DemoScenario = 'perfect_delivery'): Order {
+  const isWeightMismatch = scenario === 'weight_mismatch';
+  const isDispute = scenario === 'dispute_filed';
+
+  return {
+    id: 'ord_tl_8829104',
+    orderNumber: 'TL-8829104',
+    createdAt: '2026-09-24T14:32:00Z',
+    seller: mockSeller,
+    product: mockProduct,
+    escrowStatus: isDispute 
+      ? 'dispute_frozen' 
+      : isWeightMismatch 
+      ? 'intake_audit' 
+      : 'delivered_inspecting',
+    escrowVaultAddress: '0x8f3a92bC771a39E4C9F72c21',
+    paymentMethod: 'Apple Pay (Tokenized)',
+    trackingNumber: 'EP-9400-1092-8821',
+    carrierName: 'USPS Priority Mail Insured',
+    deliveryOtp: '482-901',
+    inspectionHoursTotal: 48,
+    inspectionRemainingSeconds: 47 * 3600 + 58 * 60 + 24, // 47h 58m 24s
+    weightAudit: {
+      declaredKg: 1.20,
+      actualKg: isWeightMismatch ? 0.40 : 1.25,
+      toleranceKg: 0.10,
+      status: isWeightMismatch ? 'anomaly' : 'match',
+      scannedAt: '2026-09-24T16:45:10Z',
+      carrierStation: 'Portland Station #97201 — Postal Scale #4',
+      scaleId: 'NIST-CAL-7718',
+      notes: isWeightMismatch 
+        ? 'CRITICAL MISMATCH: Parcel weighs 0.40 kg vs declared 1.20 kg (-66.7% delta). Possible empty-box or wrong item.' 
+        : 'Weight within certified postal tolerance (+0.05 kg packing filler verified).',
+    },
+    transitRoute: {
+      origin: 'Portland, OR',
+      destination: 'Austin, TX',
+      currentProgress: isWeightMismatch ? 25 : isDispute ? 90 : 100,
+      eta: 'Delivered Today at 11:24 AM',
+      checkpoints: [
+        { name: 'Portland Distribution Center', time: 'Sep 24, 4:45 PM', passed: true },
+        { name: 'Denver Logistics Hub', time: 'Sep 25, 2:15 AM', passed: true },
+        { name: 'Austin Regional Sorting Facility', time: 'Sep 25, 8:40 AM', passed: true },
+        { name: 'Out for Delivery', time: 'Sep 25, 9:55 AM', passed: true },
+        { name: 'Delivered to Front Door', time: 'Sep 25, 11:24 AM', passed: !isWeightMismatch, current: !isWeightMismatch },
+      ],
+    },
+    trackingEvents: [
+      {
+        id: 'evt_1',
+        stepIndex: 1,
+        title: 'Payment Secured in Escrow Vault',
+        subtitle: 'USD $85.00 locked in neutral smart vault',
+        timestamp: 'Sep 24, 2:32 PM',
+        hash: '0x8f3a92bC771a39E4C9F72c21',
+        status: 'completed',
+        detail: 'Buyer funds authorized through Apple Pay. Seller has 24 hours to generate pre-paid insured shipping label.',
+      },
+      {
+        id: 'evt_2',
+        stepIndex: 2,
+        title: 'Seller Identity & Social Link Verified',
+        subtitle: 'KYC verified & Instagram authorization active',
+        timestamp: 'Sep 24, 2:35 PM',
+        hash: '0x12b0e45c7198aa29',
+        status: 'completed',
+        detail: 'Biometric liveness confirmed against government ID. Linked IG handle @urban_ceramics passed age & dispute heuristics.',
+      },
+      {
+        id: 'evt_3',
+        stepIndex: 3,
+        title: isWeightMismatch ? 'Carrier Intake & Scale Audit: ANOMALY' : 'Carrier Intake & Scale Audit: PASSED',
+        subtitle: isWeightMismatch 
+          ? 'Scanned: 0.40 kg | Declared: 1.20 kg (-67% Discrepancy)'
+          : 'Scanned: 1.25 kg | Declared: 1.20 kg (Match Confirmed ✓)',
+        timestamp: 'Sep 24, 4:45 PM',
+        hash: '0xd7a9091e45778ac0',
+        status: isWeightMismatch ? 'anomaly' : 'completed',
+        location: 'Portland Post Office Station #97201',
+        detail: isWeightMismatch
+          ? 'Automated scale alert: Parcel weight is significantly lighter than ceramic stoneware. Risk flag raised for buyer review.'
+          : 'Postal scale NIST-CAL-7718 certified weight matches declared package manifest within acceptable packing tolerance.',
+      },
+      {
+        id: 'evt_4',
+        stepIndex: 4,
+        title: 'In Transit — EasyPost Live Telemetry',
+        subtitle: 'Tracked & Insured via USPS Priority Mail',
+        timestamp: 'Sep 25, 8:40 AM',
+        hash: '0x99c4b123fa98e011',
+        status: isWeightMismatch ? 'upcoming' : 'completed',
+        location: 'Austin Regional Logistics Hub',
+        detail: 'Package scanned through regional sorting hubs with temperature and tamper-evident custody handoffs.',
+      },
+      {
+        id: 'evt_5',
+        stepIndex: 5,
+        title: isDispute 
+          ? 'Dispute Filed — Escrow Frozen' 
+          : 'Delivered — 48-Hour Inspection Clock Active',
+        subtitle: isDispute 
+          ? 'Funds frozen. Evidence submitted to neutral arbitrator.' 
+          : 'Delivered to front door. Unpack, inspect, and confirm.',
+        timestamp: 'Sep 25, 11:24 AM',
+        hash: '0xaa189f44bcde7102',
+        status: isDispute ? 'frozen' : 'active',
+        location: 'Buyer Residence (Austin, TX)',
+        detail: isDispute
+          ? 'Arbitration case #ARB-9021 opened. Neutral human reviewer will evaluate unboxing video/photos within 12 hours.'
+          : 'Buyer has 48 hours to inspect item. If no dispute is filed, escrow funds automatically disburse to seller.',
+      },
+    ],
+  };
+}
+
+/* =========================================================================
+ * PHASE 2 MOCK DATA COLLECTIONS
+ * ========================================================================= */
+
+export const mockListings: Listing[] = [
+  {
+    id: 'list_vase_01',
+    title: 'Handcrafted Ceramic Vase — Matte White',
+    subtitle: 'Wheel-thrown stoneware with raw mineral glaze',
+    description: 'Fired to cone 10 reduction in our Portland studio. Non-porous, waterproof, designed to house heavy floral arrangements with a weighted organic base.',
+    price: 85.00,
+    shippingFee: 0.00,
+    images: [
+      'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?auto=format&fit=crop&w=800&q=80',
+    ],
+    category: 'Ceramics',
+    seller: mockSeller,
+    declaredWeightKg: 1.20,
+    likesCount: 142,
+    isEscrowGuaranteed: true,
+    createdAt: '2026-09-24T10:00:00Z',
+    tags: ['handmade', 'ceramics', 'minimalist', 'stoneware'],
+  },
+  {
+    id: 'list_jacket_02',
+    title: 'Washed Canvas Workwear Chore Jacket',
+    subtitle: '14oz Japanese duck canvas with brass hardware',
+    description: 'Triple-needle stitched chore coat tailored in Los Angeles. Pre-shrunk, heavyweight texture with deep utilitarian patch pockets.',
+    price: 165.00,
+    shippingFee: 10.00,
+    images: [
+      'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80',
+    ],
+    category: 'Apparel',
+    seller: {
+      ...mockSeller,
+      id: 'seller_kith_archives',
+      handle: 'atelier_cloth',
+      name: 'Atelier Cloth Co.',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80',
+      ordersCount: 92,
+      riskScoreNum: 96,
+      instagramFollowers: '52.1K',
+    },
+    declaredWeightKg: 0.95,
+    likesCount: 318,
+    isEscrowGuaranteed: true,
+    createdAt: '2026-09-24T12:30:00Z',
+    tags: ['workwear', 'canvas', 'jacket', 'menswear'],
+  },
+  {
+    id: 'list_print_03',
+    title: 'Brutalist Concrete 04 — Limited Risograph',
+    subtitle: 'Edition of 50 on 280gsm Fabriano cotton paper',
+    description: 'Three-color soy ink risograph capturing structural geometry in West Berlin. Hand-numbered and pencil-signed by the artist.',
+    price: 42.00,
+    shippingFee: 6.00,
+    images: [
+      'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80',
+    ],
+    category: 'Prints',
+    seller: {
+      ...mockSeller,
+      id: 'seller_studio_nomad',
+      handle: 'nomad_press',
+      name: 'Nomad Press Berlin',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&h=256&q=80',
+      ordersCount: 34,
+      riskScoreNum: 95,
+      instagramFollowers: '19.4K',
+    },
+    declaredWeightKg: 0.35,
+    likesCount: 89,
+    isEscrowGuaranteed: true,
+    createdAt: '2026-09-23T18:00:00Z',
+    tags: ['art', 'risograph', 'architecture', 'poster'],
+  },
+  {
+    id: 'list_ring_04',
+    title: 'Hand-Carved Sterling Silver Signet Ring',
+    subtitle: 'Solid 925 silver with lost-wax raw texture',
+    description: 'Sculpted individually by hand in Brooklyn. Heavy gauge sterling with comfortable tapered inner band and satin patina finish.',
+    price: 130.00,
+    shippingFee: 8.00,
+    images: [
+      'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
+    ],
+    category: 'Jewelry',
+    seller: {
+      ...mockSeller,
+      id: 'seller_verre_gems',
+      handle: 'verre_atelier',
+      name: 'Verre Atelier',
+      avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&h=256&q=80',
+      ordersCount: 61,
+      riskScoreNum: 99,
+      instagramFollowers: '28.3K',
+    },
+    declaredWeightKg: 0.15,
+    likesCount: 204,
+    isEscrowGuaranteed: true,
+    createdAt: '2026-09-22T14:15:00Z',
+    tags: ['jewelry', 'silver', 'signet', 'handmade'],
+  },
+  {
+    id: 'list_home_05',
+    title: 'Japanese Hinoki Wood Catchall Valet',
+    subtitle: 'Aromatic sustainably harvested cypress timber',
+    description: 'Milled from single timber offcuts in Nagano. Beveled perimeter tray designed for EDC essentials, keys, and fountain pens.',
+    price: 68.00,
+    shippingFee: 7.00,
+    images: [
+      'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=800&q=80',
+    ],
+    category: 'Home',
+    seller: mockSeller,
+    declaredWeightKg: 0.55,
+    likesCount: 167,
+    isEscrowGuaranteed: true,
+    createdAt: '2026-09-21T09:00:00Z',
+    tags: ['woodwork', 'japan', 'hinoki', 'homeware'],
+  },
+  {
+    id: 'list_vintage_06',
+    title: '1998 Helmut Lang Painter Denim Jacket',
+    subtitle: 'Archival classic vintage specimen in size 48',
+    description: 'Authentic 90s Italian production with classic distressing and signature cut. Sourced in Harajuku and verified for authenticity.',
+    price: 290.00,
+    shippingFee: 15.00,
+    images: [
+      'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
+    ],
+    category: 'Vintage',
+    seller: {
+      ...mockSeller,
+      id: 'seller_tokyo_vault',
+      handle: 'tokyo_vault',
+      name: 'Tokyo Archival Vault',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&h=256&q=80',
+      ordersCount: 114,
+      riskScoreNum: 97,
+      instagramFollowers: '78.5K',
+    },
+    declaredWeightKg: 1.10,
+    likesCount: 524,
+    isEscrowGuaranteed: true,
+    createdAt: '2026-09-20T11:00:00Z',
+    tags: ['vintage', 'archival', 'denim', 'designer'],
+  },
+];
+
+export const mockRecentlyProtected: RecentlyProtectedItem[] = [
+  {
+    id: 'rec_1',
+    buyerHandle: 'sarah_k',
+    buyerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=128&h=128&q=80',
+    sellerHandle: 'urban_ceramics',
+    sellerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&h=128&q=80',
+    amount: 85.00,
+    itemTitle: 'Ceramic Stoneware Vase',
+    itemImage: 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=400&q=80',
+    timestamp: '8 mins ago',
+    receiptId: 'TL-8829104',
+    verifiedWeightKg: 1.25,
+    txHash: '0x8f3a92...72c21',
+  },
+  {
+    id: 'rec_2',
+    buyerHandle: 'marcus_m',
+    buyerAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=128&h=128&q=80',
+    sellerHandle: 'atelier_cloth',
+    sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&h=128&q=80',
+    amount: 165.00,
+    itemTitle: 'Washed Canvas Jacket',
+    itemImage: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=400&q=80',
+    timestamp: '24 mins ago',
+    receiptId: 'TL-7749012',
+    verifiedWeightKg: 0.98,
+    txHash: '0x3c990a...4410',
+  },
+  {
+    id: 'rec_3',
+    buyerHandle: 'elena_v',
+    buyerAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=128&h=128&q=80',
+    sellerHandle: 'verre_atelier',
+    sellerAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=128&h=128&q=80',
+    amount: 130.00,
+    itemTitle: 'Sterling Silver Signet',
+    itemImage: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=400&q=80',
+    timestamp: '1 hour ago',
+    receiptId: 'TL-6192804',
+    verifiedWeightKg: 0.16,
+    txHash: '0x7a39d8...844b',
+  },
+  {
+    id: 'rec_4',
+    buyerHandle: 'kevin_chen',
+    buyerAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=128&h=128&q=80',
+    sellerHandle: 'nomad_press',
+    sellerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80',
+    amount: 42.00,
+    itemTitle: 'Brutalist Concrete Print',
+    itemImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=400&q=80',
+    timestamp: '2 hours ago',
+    receiptId: 'TL-5512948',
+    verifiedWeightKg: 0.36,
+    txHash: '0xd7a909...8ac0',
+  },
+  {
+    id: 'rec_5',
+    buyerHandle: 'zoe_art',
+    buyerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&h=128&q=80',
+    sellerHandle: 'tokyo_vault',
+    sellerAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=128&h=128&q=80',
+    amount: 290.00,
+    itemTitle: 'Archival Denim Jacket',
+    itemImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80',
+    timestamp: '3 hours ago',
+    receiptId: 'TL-4912001',
+    verifiedWeightKg: 1.12,
+    txHash: '0x12b0e4...aa29',
+  },
+];
+
+export const mockPlatformFraudStats: PlatformFraudStats = {
+  disputesFrozenToday: 3,
+  weightAuditsPassed: 12,
+  totalProtectedVolume: 2140,
+  activeInspections: 7,
+  avgPassRate: 99.4,
+};
+
+export const mockStorefront: Storefront = {
+  seller: mockSeller,
+  bio: 'Studio ceramicist firing reduction stoneware in Portland, OR. Every parcel is certified weighed on postal intake scales.',
+  instagramUrl: 'https://instagram.com/urban_ceramics',
+  rating: 4.98,
+  reviewsCount: 46,
+  activeListingsCount: 3,
+  listings: mockListings.filter((l) => l.seller.handle === 'urban_ceramics'),
+};
+
+export const mockPayouts: Payout = {
+  availableBalance: 2840.00,
+  inEscrowBalance: 85.00,
+  releasedThisMonth: 4250.00,
+  currency: 'USD',
+  transactions: [
+    {
+      id: 'tx_1',
+      orderNumber: 'TL-8829104',
+      itemTitle: 'Handcrafted Ceramic Vase',
+      amount: 85.00,
+      escrowStatus: 'delivered_inspecting',
+      payoutStatus: 'in_escrow',
+      date: 'Today, 11:24 AM',
+    },
+    {
+      id: 'tx_2',
+      orderNumber: 'TL-8119022',
+      itemTitle: 'Hinoki Wood Catchall Tray',
+      amount: 68.00,
+      escrowStatus: 'funds_released',
+      payoutStatus: 'released',
+      date: 'Sep 22, 2026',
+    },
+    {
+      id: 'tx_3',
+      orderNumber: 'TL-7901238',
+      itemTitle: 'Speckled Planter Pot — Ochre',
+      amount: 110.00,
+      escrowStatus: 'funds_released',
+      payoutStatus: 'available',
+      date: 'Sep 20, 2026',
+    },
+    {
+      id: 'tx_4',
+      orderNumber: 'TL-7548910',
+      itemTitle: 'Ceramic Pour-Over Dripper',
+      amount: 54.00,
+      escrowStatus: 'funds_released',
+      payoutStatus: 'available',
+      date: 'Sep 18, 2026',
+    },
+  ],
+};
+
+export const mockSellerAnalytics: SellerAnalytics = {
+  views: 3840,
+  conversionRate: 4.8,
+  escrowSuccessRate: 99.6,
+  avgReleaseTimeHours: 18.4,
+  sparkline: [14, 22, 18, 30, 26, 38, 34, 46, 52, 48, 58, 65],
+};
+
+export const mockThreads: Thread[] = [
+  {
+    id: 'th_1',
+    participant: {
+      name: 'Maya Lin',
+      handle: 'urban_ceramics',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&h=128&q=80',
+      role: 'seller',
+    },
+    lastMessage: 'Your package was safely intake weighed (1.25 kg) at Portland station! Let me know when it arrives.',
+    timestamp: '11:25 AM',
+    unread: true,
+    stateChip: 'Open',
+    orderId: 'TL-8829104',
+  },
+  {
+    id: 'th_2',
+    participant: {
+      name: 'TrustLink Oracle',
+      handle: 'trustlink_guard',
+      avatarUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=128&h=128&q=80',
+      role: 'support',
+    },
+    lastMessage: 'Carrier telemetry confirmed: NIST postal scale calibrated. 48-hour inspection clock is active.',
+    timestamp: 'Yesterday',
+    unread: false,
+    stateChip: 'Resolved',
+    orderId: 'TL-8829104',
+  },
+  {
+    id: 'th_3',
+    participant: {
+      name: 'Atelier Cloth Co.',
+      handle: 'atelier_cloth',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&h=128&q=80',
+      role: 'seller',
+    },
+    lastMessage: 'Thanks for ordering! Pre-paid insured label generated.',
+    timestamp: 'Sep 23',
+    unread: false,
+    stateChip: 'Resolved',
+  },
+];
+
