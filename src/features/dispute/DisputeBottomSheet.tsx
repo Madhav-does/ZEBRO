@@ -45,7 +45,7 @@ export function DisputeBottomSheet() {
     {
       id: "fake_item",
       title: "Counterfeit or Materially Different",
-      desc: "Item does not match Instagram listing photos or description.",
+      desc: "Item does not match Zebro marketplace listing photos or description.",
     },
     {
       id: "other",

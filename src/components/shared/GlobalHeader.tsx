@@ -30,7 +30,7 @@ export function GlobalHeader() {
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground hidden sm:block">
-              Instagram DM & Bio Fraud Defense
+              Zebro Direct & Bio Fraud Defense
             </p>
           </div>
         </div>

@@ -25,7 +25,7 @@ export function BentoEscrowGuarantee() {
               Smart Vault Escrow
             </h4>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Your money never goes directly to an Instagram account. Funds rest in
+              Your money never goes directly to an unverified personal account. Funds rest in
               an immutable vault until you approve.
             </p>
           </div>

@@ -1,16 +1,22 @@
 import crypto from 'crypto';
 import { prisma } from '../lib/db.js';
-import { InvalidTransitionError, NotFoundError } from '../lib/errors.js';
+import { InvalidTransitionError, NotFoundError, ForbiddenError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
-import { EscrowEventType, EscrowState, findNextState } from './transitions.js';
+import { EscrowEventType, EscrowState, findTransitionRule, FsmRole } from './transitions.js';
 import { timers } from './timers.js';
 import { mockStripe } from '../mocks/stripe.js';
 import { mockEasyPost } from '../mocks/easypost.js';
 
+export interface TransitionCaller {
+  id: string;
+  role: FsmRole | string;
+}
+
 export async function transition(
   orderId: string,
   event: EscrowEventType,
-  payload: Record<string, unknown> = {}
+  payload: Record<string, unknown> = {},
+  caller?: TransitionCaller
 ) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -27,12 +33,38 @@ export async function transition(
   }
 
   const currentState = order.status as EscrowState;
-  const nextState = findNextState(currentState, event);
+  const rule = findTransitionRule(currentState, event);
 
-  if (!nextState) {
+  if (!rule) {
     logger.warn({ orderId, currentState, event }, '[FSM] Invalid state transition rejected');
     throw new InvalidTransitionError(currentState, event);
   }
+
+  // Role-Based Access Control (RBAC) Enforcement
+  if (caller) {
+    const callerRole = caller.role as FsmRole;
+    if (callerRole !== 'admin' && !rule.allowedRoles.includes(callerRole)) {
+      logger.warn(
+        { orderId, event, callerRole, allowedRoles: rule.allowedRoles },
+        '[FSM] Role authorization denied'
+      );
+      throw new ForbiddenError(
+        `Role '${caller.role}' is not authorized to trigger FSM event '${event}'. Permitted roles: ${rule.allowedRoles.join(', ')}`
+      );
+    }
+
+    // Direct object ownership check: buyer can only mutate their own order
+    if (callerRole === 'buyer' && caller.id !== 'admin' && caller.id !== order.buyerId) {
+      throw new ForbiddenError('Unauthorized: You are not the designated buyer for this order.');
+    }
+
+    // Direct object ownership check: seller can only mutate their own order
+    if (callerRole === 'seller' && caller.id !== 'admin' && caller.id !== order.sellerId) {
+      throw new ForbiddenError('Unauthorized: You are not the designated seller for this order.');
+    }
+  }
+
+  const nextState = rule.to;
 
   logger.info(
     { orderId, from: currentState, to: nextState, event },

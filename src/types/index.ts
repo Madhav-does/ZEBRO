@@ -20,7 +20,8 @@ export interface Seller {
   riskScoreNum: number;
   riskFactors: string[];
   memberSince: string;
-  instagramFollowers: string;
+  followersCount?: string;
+  instagramFollowers?: string; // Backwards-compatible alias
   kycVerifiedAt: string;
   storeName?: string;
   isIdentityVerified?: boolean;
@@ -225,7 +226,8 @@ export interface PlatformFraudStats {
 export interface Storefront {
   seller: Seller;
   bio: string;
-  instagramUrl: string;
+  storefrontUrl?: string;
+  instagramUrl?: string; // Backwards-compatible alias
   rating: number;
   reviewsCount: number;
   activeListingsCount: number;

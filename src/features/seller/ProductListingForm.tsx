@@ -89,7 +89,7 @@ export function ProductListingForm({ isOpen, onClose }: ProductListingFormProps)
               </div>
               <h4 className="text-sm font-bold text-foreground">Listing Published!</h4>
               <p className="text-xs text-muted-foreground max-w-xs">
-                Your item is live on Instagram TrustLink with escrow protection enabled.
+                Your item is live on Zebro Escrow with tamper-evident scale protection enabled.
               </p>
             </div>
           ) : (
@@ -199,7 +199,7 @@ export function ProductListingForm({ isOpen, onClose }: ProductListingFormProps)
 
               {/* Description */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Description & Instagram Caption</label>
+                <label className="text-xs font-semibold text-foreground">Description & Item Caption</label>
                 <textarea
                   rows={2}
                   placeholder="Describe your item, provenance, dimensions..."

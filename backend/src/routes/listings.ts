@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../lib/db.js';
-import { NotFoundError } from '../lib/errors.js';
+import { NotFoundError, ForbiddenError, UnauthorizedError } from '../lib/errors.js';
 import { checkIdempotency, saveIdempotencyResponse } from '../lib/idempotency.js';
 
 const createListingSchema = z.object({
@@ -184,18 +184,14 @@ export async function listingRoutes(fastify: FastifyInstance) {
       ? body.images
       : ['https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=800&q=80']);
 
-    // Find seller or fallback to @urban_ceramics
-    const sellerHeader = request.headers['x-user-id'] as string | undefined;
-    let seller = sellerHeader
-      ? await prisma.user.findFirst({ where: { OR: [{ id: sellerHeader }, { handle: sellerHeader }] } })
-      : await prisma.user.findFirst({ where: { handle: 'urban_ceramics' } });
-
-    if (!seller) {
-      seller = await prisma.user.findFirst({ where: { role: 'seller' } });
+    // Find authenticated seller
+    if (!request.user) {
+      throw new UnauthorizedError('Authentication required to publish a listing.');
     }
 
-    if (!seller) {
-      throw new NotFoundError('Seller User');
+    const seller = await prisma.user.findUnique({ where: { id: request.user.id } });
+    if (!seller || (seller.role !== 'seller' && request.user.role !== 'admin')) {
+      throw new ForbiddenError('Only registered sellers can publish marketplace listings.');
     }
 
     const listing = await prisma.listing.create({
@@ -249,7 +245,8 @@ function formatListing(l: any) {
       riskScoreNum: l.seller.disputeCount === 0 ? 98 : 75,
       riskFactors: ['Government ID & Biometric Liveness KYC Verified'],
       memberSince: 'March 2023',
-      instagramFollowers: '34.8K',
+      followersCount: '34.8K',
+      instagramFollowers: '34.8K', // Backwards-compatible alias
       kycVerifiedAt: l.seller.createdAt.toISOString(),
       storeName: l.seller.handle === 'urban_ceramics' ? 'Maya Lin Studios' : l.seller.handle,
       isIdentityVerified: l.seller.kycVerified,

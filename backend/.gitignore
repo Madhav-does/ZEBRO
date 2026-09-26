@@ -3,4 +3,7 @@ dist/
 *.log
 .env
 prisma/*.db
+!prisma/seed.db
 prisma/*.db-journal
+
+.vercel

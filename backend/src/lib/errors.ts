@@ -47,3 +47,15 @@ export class IdempotencyConflictError extends AppError {
     super(`Concurrent request with identical Idempotency-Key '${key}' is already processing.`, 409);
   }
 }
+
+export class UnauthorizedError extends AppError {
+  constructor(message = 'Missing or invalid authentication token.') {
+    super(message, 401);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = 'You do not have permission to access this resource or perform this action.') {
+    super(message, 403);
+  }
+}

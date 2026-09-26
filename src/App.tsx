@@ -21,12 +21,24 @@ function MainContent() {
   const { setBackendConnected } = useAppStore()
 
   useEffect(() => {
-    fetch("http://localhost:4000/health")
+    const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+    const healthUrl = isNative ? "http://10.0.2.2:4000/health" : "http://localhost:4000/health";
+    fetch(healthUrl)
       .then((res) => res.json())
       .then((data) => {
         if (data.status === "ok") setBackendConnected(true)
       })
-      .catch(() => setBackendConnected(false))
+      .catch(() => {
+        // Fallback check on standard localhost in case adb reverse is active
+        if (isNative) {
+          fetch("http://localhost:4000/health")
+            .then((r) => r.json())
+            .then((d) => { if (d.status === "ok") setBackendConnected(true) })
+            .catch(() => setBackendConnected(false));
+        } else {
+          setBackendConnected(false);
+        }
+      })
   }, [setBackendConnected])
 
   return (

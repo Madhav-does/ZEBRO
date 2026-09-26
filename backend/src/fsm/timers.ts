@@ -1,6 +1,21 @@
 import { prisma } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 
+/**
+ * ARCHITECTURAL NOTICE (MED-07 — Single-Instance Concurrency Limitation):
+ *
+ * Current Architecture:
+ * - Backed by persistent SQLite and an in-process setInterval polling loop.
+ * - Strictly thread-safe and deterministic for local development and single-instance container deployments.
+ *
+ * Distributed Scaling Guidance (PostgreSQL / Multi-Instance Clusters):
+ * - When scaling horizontally to multi-instance environments (e.g. Kubernetes, multiple Cloud Run replicas):
+ *   1) PostgreSQL: Use `SELECT ... WHERE processed = false AND fires_at <= NOW() FOR UPDATE SKIP LOCKED`
+ *      to ensure only one worker claims and processes each timer.
+ *   2) Redis / Queue: Migrate to BullMQ delayed jobs or Redis Redlock for distributed leasing.
+ *   3) Serverless / Cloud: Use Cloud Tasks or AWS EventBridge scheduler with idempotency keys.
+ */
+
 let pollerInterval: NodeJS.Timeout | null = null;
 
 export const timers = {

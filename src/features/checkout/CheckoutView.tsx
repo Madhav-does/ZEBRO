@@ -6,7 +6,7 @@ import { BentoEscrowGuarantee } from "./BentoEscrowGuarantee"
 import { CardPaymentAccordion } from "./CardPaymentAccordion"
 import { CheckoutCTA } from "./CheckoutCTA"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Instagram, AlertCircle, RefreshCw } from "lucide-react"
+import { ShieldCheck, AlertCircle, RefreshCw } from "lucide-react"
 
 interface CheckoutViewProps {
   listing?: Listing | null
@@ -82,18 +82,18 @@ export function CheckoutView({ listing, onComplete }: CheckoutViewProps = {}) {
 
   return (
     <div className="space-y-5 pb-6">
-      {/* Instagram Context Pill */}
-      <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-emerald-500/10 border border-purple-500/20 text-xs">
+      {/* Zebro Context Pill */}
+      <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-blue-500/10 border border-emerald-500/20 text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
-            <Instagram className="w-3.5 h-3.5" />
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-sm">
+            <ShieldCheck className="w-3.5 h-3.5" />
           </div>
           <div>
             <span className="font-semibold text-foreground">
               Direct Purchase Link
             </span>
             <span className="text-muted-foreground text-[11px] block sm:inline sm:ml-1.5">
-              Initiated via Instagram DM
+              Initiated via Zebro Direct Link
             </span>
           </div>
         </div>

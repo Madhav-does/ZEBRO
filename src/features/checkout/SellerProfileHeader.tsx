@@ -74,7 +74,7 @@ export function SellerProfileHeader({ seller }: SellerProfileHeaderProps) {
                 <span>@{seller.handle}</span>
                 <span>•</span>
                 <span className="text-[11px] text-emerald-400/90 font-medium">
-                  {seller.instagramFollowers} Followers
+                  {seller.followersCount || seller.instagramFollowers} Followers
                 </span>
               </div>
             </div>
