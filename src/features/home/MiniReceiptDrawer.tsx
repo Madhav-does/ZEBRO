@@ -85,7 +85,11 @@ export function MiniReceiptDrawer() {
                 <span>Protected At</span>
               </div>
               <p className="text-xs font-mono font-medium text-foreground truncate">
-                {new Date(selectedMiniReceipt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {selectedMiniReceipt.timestamp.includes("ago")
+                  ? selectedMiniReceipt.timestamp
+                  : isNaN(Date.parse(selectedMiniReceipt.timestamp))
+                  ? selectedMiniReceipt.timestamp
+                  : new Date(selectedMiniReceipt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </div>

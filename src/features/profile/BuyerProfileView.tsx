@@ -1,8 +1,21 @@
 import { ShieldCheck, Shield, CheckCircle2, PackageCheck, AlertCircle, Lock, ArrowUpRight } from "lucide-react"
 import { useAppStore } from "@/store/useAppStore"
+import { useActiveOrders, usePastOrders } from "@/hooks/useEscrow"
 
 export function BuyerProfileView() {
   const { setShellTab } = useAppStore()
+  const { data: activeOrders = [] } = useActiveOrders()
+  const { data: pastOrders = [] } = usePastOrders()
+
+  const allOrders = [...activeOrders, ...pastOrders]
+  const ordersProtectedCount = allOrders.length
+  const disputesCount = allOrders.filter(
+    (o) => o.escrowStatus === "dispute_frozen"
+  ).length
+  const totalEscrowed = allOrders.reduce(
+    (acc, o) => acc + (o.product.price + o.product.shippingFee),
+    0
+  )
 
   return (
     <div className="space-y-4 pt-1">
@@ -27,15 +40,21 @@ export function BuyerProfileView() {
         {/* 3-stat buyer metrics */}
         <div className="grid grid-cols-3 gap-2 pt-1 text-center">
           <div className="p-2.5 rounded-xl bg-background/50 border border-border/40">
-            <span className="text-sm font-bold font-mono text-foreground">6</span>
+            <span className="text-sm font-bold font-mono text-foreground">
+              {ordersProtectedCount}
+            </span>
             <p className="text-[9px] text-muted-foreground mt-0.5">Orders Protected</p>
           </div>
           <div className="p-2.5 rounded-xl bg-background/50 border border-border/40">
-            <span className="text-sm font-bold font-mono text-emerald-400">0</span>
-            <p className="text-[9px] text-muted-foreground mt-0.5">Disputes Filed</p>
+            <span className={disputesCount > 0 ? "text-sm font-bold font-mono text-rose-400" : "text-sm font-bold font-mono text-emerald-400"}>
+              {disputesCount}
+            </span>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Disputes Active</p>
           </div>
           <div className="p-2.5 rounded-xl bg-background/50 border border-border/40">
-            <span className="text-sm font-bold font-mono text-foreground">$384</span>
+            <span className="text-sm font-bold font-mono text-foreground">
+              ${Math.round(totalEscrowed)}
+            </span>
             <p className="text-[9px] text-muted-foreground mt-0.5">Total Escrowed</p>
           </div>
         </div>

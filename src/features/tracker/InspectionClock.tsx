@@ -9,6 +9,8 @@ import {
   ShieldAlert,
   Lock,
   Loader2,
+  PackageCheck,
+  AlertCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -19,16 +21,38 @@ interface InspectionClockProps {
 export function InspectionClock({ order }: InspectionClockProps) {
   const { setIsDisputeOpen, setIsReceiptOpen } = useAppStore()
   const releaseEscrowMutation = useReleaseEscrow()
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(
-    order.inspectionRemainingSeconds || 47 * 3600 + 58 * 60 + 24
-  )
 
   const isFrozen = order.escrowStatus === "dispute_frozen"
   const isReleased = order.escrowStatus === "funds_released"
   const isInspecting = order.escrowStatus === "delivered_inspecting"
-  const isHeld = order.escrowStatus === "intake_audit"
+  const isPendingDelivery = order.escrowStatus === "payment_locked" || order.escrowStatus === "in_transit"
 
-  // Live ticking countdown simulation
+  // Initial calculation based on current order state
+  const getInitialSeconds = () => {
+    if (isReleased) return 0
+    if (order.inspectionRemainingSeconds && order.inspectionRemainingSeconds > 0) {
+      return order.inspectionRemainingSeconds
+    }
+    if (isInspecting) return 47 * 3600 + 58 * 60 + 24
+    return 48 * 3600 // Full 48 hours queued
+  }
+
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(getInitialSeconds)
+
+  // Reactive state synchronization when backend order updates or user switches orders
+  useEffect(() => {
+    if (isReleased) {
+      setSecondsRemaining(0)
+    } else if (order.inspectionRemainingSeconds && order.inspectionRemainingSeconds > 0) {
+      setSecondsRemaining(order.inspectionRemainingSeconds)
+    } else if (isInspecting) {
+      setSecondsRemaining((prev) => (prev > 0 && prev < 48 * 3600 ? prev : 47 * 3600 + 58 * 60 + 24))
+    } else {
+      setSecondsRemaining(48 * 3600)
+    }
+  }, [order.id, order.escrowStatus, order.inspectionRemainingSeconds, isReleased, isInspecting])
+
+  // Live ticking countdown simulation while actively inspecting
   useEffect(() => {
     if (!isInspecting) return
 
@@ -51,7 +75,11 @@ export function InspectionClock({ order }: InspectionClockProps) {
 
   // 48 hours total in seconds = 172,800
   const maxSeconds = 48 * 3600
-  const progressPct = Math.min(Math.max((secondsRemaining / maxSeconds) * 100, 0), 100)
+  const progressPct = isPendingDelivery
+    ? 100
+    : isReleased
+    ? 0
+    : Math.min(Math.max((secondsRemaining / maxSeconds) * 100, 0), 100)
 
   const handleReleaseEarly = () => {
     releaseEscrowMutation.mutate(order.id, {
@@ -68,7 +96,7 @@ export function InspectionClock({ order }: InspectionClockProps) {
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-emerald-400" />
           <h3 className="font-bold text-sm sm:text-base text-foreground">
-            48-Hour Inspection Window
+            {isPendingDelivery ? "48-Hour Inspection Window" : "Live Inspection Window"}
           </h3>
         </div>
         <span
@@ -76,24 +104,24 @@ export function InspectionClock({ order }: InspectionClockProps) {
             "text-[10px] font-mono px-2 py-0.5 rounded-full border font-bold uppercase",
             isFrozen && "bg-rose-500/15 text-rose-400 border-rose-500/30",
             isReleased && "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-            isHeld && "bg-amber-500/15 text-amber-400 border-amber-500/30",
-            isInspecting && "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+            isPendingDelivery && "bg-blue-500/15 text-blue-400 border-blue-500/30",
+            isInspecting && "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 animate-pulse"
           )}
         >
           {isFrozen
             ? "Escrow Frozen"
             : isReleased
             ? "Funds Released"
-            : isHeld
-            ? "Intake Audit Hold"
-            : "Live Inspection"}
+            : isPendingDelivery
+            ? "Pending Delivery"
+            : "Live Inspection (Ticking)"}
         </span>
       </div>
 
       {/* Countdown Ring & Digital Clock */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-background/50 border border-border/50">
         <div className="flex items-center gap-4">
-          {/* Circular mini progress */}
+          {/* Circular progress */}
           <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
               <path
@@ -106,7 +134,13 @@ export function InspectionClock({ order }: InspectionClockProps) {
               <path
                 className={cn(
                   "transition-all duration-1000",
-                  isFrozen ? "text-rose-400" : isHeld ? "text-amber-400" : "text-emerald-400"
+                  isFrozen
+                    ? "text-rose-400"
+                    : isPendingDelivery
+                    ? "text-blue-400"
+                    : isReleased
+                    ? "text-zinc-600"
+                    : "text-emerald-400"
                 )}
                 strokeDasharray={`${progressPct}, 100`}
                 strokeWidth="3.5"
@@ -119,24 +153,48 @@ export function InspectionClock({ order }: InspectionClockProps) {
             <Clock
               className={cn(
                 "w-5 h-5 absolute",
-                isFrozen ? "text-rose-400" : isHeld ? "text-amber-400" : "text-emerald-400"
+                isFrozen
+                  ? "text-rose-400"
+                  : isPendingDelivery
+                  ? "text-blue-400"
+                  : isReleased
+                  ? "text-zinc-500"
+                  : "text-emerald-400"
               )}
             />
           </div>
 
           <div>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
-              Remaining Inspection Time
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
+                {isPendingDelivery ? "Guaranteed Return Window" : "Remaining Inspection Time"}
+              </span>
+              {isPendingDelivery && (
+                <span className="text-[9px] font-mono px-1 rounded bg-blue-500/20 text-blue-300">
+                  Queued
+                </span>
+              )}
+              {isInspecting && (
+                <span className="text-[9px] font-mono px-1 rounded bg-emerald-500/20 text-emerald-400">
+                  Live
+                </span>
+              )}
+            </div>
+
             <div className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground tabular-nums">
               {String(hours).padStart(2, "0")}h :{" "}
               {String(minutes).padStart(2, "0")}m :{" "}
               {String(seconds).padStart(2, "0")}s
             </div>
-            <p className="text-[11px] text-muted-foreground">
+
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               {isFrozen
                 ? "Timer paused. Dispute arbitration in progress."
-                : "Funds auto-release to seller when timer hits 00:00:00."}
+                : isReleased
+                ? "Inspection period elapsed. Payout settled to seller."
+                : isPendingDelivery
+                ? "48h window activates upon verified courier doorstep delivery."
+                : "Funds auto-release to creator when timer hits 00:00:00."}
             </p>
           </div>
         </div>

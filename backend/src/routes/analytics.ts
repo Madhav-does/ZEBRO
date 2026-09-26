@@ -30,6 +30,44 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
 
   // Recently Protected Ticker Feed
   fastify.get('/marketplace/recently-protected', async () => {
+    const recentOrders = await prisma.order.findMany({
+      take: 8,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        listing: true,
+        buyer: true,
+        seller: true,
+      },
+    });
+
+    if (recentOrders.length > 0) {
+      return recentOrders.map((o) => {
+        let firstImg = 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=400&q=80';
+        try {
+          const imgs = JSON.parse(o.listing.imageUrls || '[]');
+          if (imgs.length > 0) firstImg = imgs[0];
+        } catch {}
+
+        const diffMinutes = Math.max(1, Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 60000));
+        const timeLabel = diffMinutes < 60 ? `${diffMinutes} mins ago` : `${Math.floor(diffMinutes / 60)} hours ago`;
+
+        return {
+          id: `rec_${o.id}`,
+          buyerHandle: o.buyer.handle,
+          buyerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=128&h=128&q=80',
+          sellerHandle: o.seller.handle,
+          sellerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&h=128&q=80',
+          amount: Number((o.totalCents / 100).toFixed(2)),
+          itemTitle: o.listing.title,
+          itemImage: firstImg,
+          timestamp: timeLabel,
+          receiptId: `TL-${o.id.slice(-7).toUpperCase()}`,
+          verifiedWeightKg: Number((o.declaredWeightG / 1000).toFixed(2)),
+          txHash: `0x8f3a92...${o.id.slice(-5)}`,
+        };
+      });
+    }
+
     return [
       {
         id: 'rec_1',
@@ -58,34 +96,6 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         receiptId: 'TL-7749012',
         verifiedWeightKg: 0.98,
         txHash: '0x3c990a...4410',
-      },
-      {
-        id: 'rec_3',
-        buyerHandle: 'elena_v',
-        buyerAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=128&h=128&q=80',
-        sellerHandle: 'verre_atelier',
-        sellerAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=128&h=128&q=80',
-        amount: 130.0,
-        itemTitle: 'Sterling Silver Signet',
-        itemImage: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=400&q=80',
-        timestamp: '1 hour ago',
-        receiptId: 'TL-6192804',
-        verifiedWeightKg: 0.16,
-        txHash: '0x7a39d8...844b',
-      },
-      {
-        id: 'rec_4',
-        buyerHandle: 'kevin_chen',
-        buyerAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=128&h=128&q=80',
-        sellerHandle: 'nomad_press',
-        sellerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80',
-        amount: 42.0,
-        itemTitle: 'Brutalist Concrete Print',
-        itemImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=400&q=80',
-        timestamp: '2 hours ago',
-        receiptId: 'TL-5512948',
-        verifiedWeightKg: 0.36,
-        txHash: '0xd7a909...8ac0',
       },
     ];
   });

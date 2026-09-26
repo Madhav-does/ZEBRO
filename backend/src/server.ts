@@ -71,7 +71,7 @@ export async function buildApp() {
     });
   });
 
-  // 3. Health Check
+  // 3. Health & Root Endpoints
   const healthHandler = async () => ({
     status: 'ok',
     service: 'trustlink-escrow-backend',
@@ -80,6 +80,26 @@ export async function buildApp() {
   });
   app.get('/health', healthHandler);
   app.get('/api/v1/health', healthHandler);
+
+  // Root landing endpoint to resolve GET / requests cleanly
+  app.get('/', async () => ({
+    service: 'TrustLink Escrow API',
+    status: 'online',
+    version: '1.0.0',
+    description: 'Deterministic SQLite FSM Escrow Engine with EasyPost Weight Audit & Live Telemetry',
+    endpoints: {
+      health: '/health',
+      apiHealth: '/api/v1/health',
+      listings: '/api/v1/listings',
+      orders: '/api/v1/orders',
+      activeOrders: '/api/v1/orders/active',
+      pastOrders: '/api/v1/orders/past',
+      analytics: '/api/v1/marketplace/fraud-stats',
+      recentlyProtected: '/api/v1/marketplace/recently-protected',
+      threads: '/api/v1/inbox/threads',
+    },
+    documentation: 'https://github.com/Madhav-does/ZEBRO',
+  }));
 
   // 4. Register Route Modules
   const registerRoutes = async (instance: any) => {

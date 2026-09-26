@@ -6,7 +6,7 @@ import { ShieldCheck, Package, CheckCircle2, ExternalLink, Scale } from "lucide-
 import { cn } from "@/lib/utils"
 
 export function OrdersHubView() {
-  const { ordersSubTab, setOrdersSubTab, setIsReceiptOpen, currentOrderId, setCurrentOrderId } = useAppStore()
+  const { ordersSubTab, setOrdersSubTab, setIsReceiptOpen, currentOrderId, setCurrentOrderId, setShellTab } = useAppStore()
   const { data: activeOrders = [] } = useActiveOrders()
   const { data: pastOrdersFromApi = [] } = usePastOrders()
 
@@ -42,7 +42,7 @@ export function OrdersHubView() {
     }
   ]
 
-  const activeCount = Math.max(activeOrders.length, 1)
+  const activeCount = activeOrders.length
   const pastOrdersList = pastOrdersFromApi.length > 0 
     ? pastOrdersFromApi.map(o => ({
         id: o.id,
@@ -120,30 +120,50 @@ export function OrdersHubView() {
             </div>
           )}
 
-          {/* Active Order Summary Banner */}
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-card to-background border border-emerald-500/30 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                <ShieldCheck className="w-5 h-5" />
+          {activeOrders.length === 0 ? (
+            <div className="p-8 text-center rounded-3xl border border-dashed border-border/80 bg-card/40 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6" />
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-foreground">
-                    Order #{currentOrderId.replace(/^ord_tl_/, 'TL-').slice(0, 10).toUpperCase()}
-                  </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                    PROTECTED
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground">Neutral Escrow Smart Vault Active</p>
-              </div>
+              <h4 className="text-sm font-bold text-foreground">No Active Escrow Orders</h4>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                Purchases made in the Feed or Explore are protected by TrustLink neutral escrow until 48h after verified delivery.
+              </p>
+              <button
+                onClick={() => setShellTab("home")}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-colors"
+              >
+                Discover Verified Creator Goods
+              </button>
             </div>
+          ) : (
+            <>
+              {/* Active Order Summary Banner */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-card to-background border border-emerald-500/30 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-foreground">
+                        Order #{activeOrders.find(o => o.id === currentOrderId)?.orderNumber || `TL-${currentOrderId.slice(-7).toUpperCase()}`}
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                        PROTECTED
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Neutral Escrow Smart Vault Active</p>
+                  </div>
+                </div>
 
-            <span className="text-xs font-mono font-bold text-emerald-400">Live FSM</span>
-          </div>
+                <span className="text-xs font-mono font-bold text-emerald-400">Live FSM</span>
+              </div>
 
-          {/* Embedded Phase 1 Live Escrow Tracker */}
-          <TrackerView orderId={currentOrderId} />
+              {/* Embedded Live Escrow Tracker */}
+              <TrackerView orderId={currentOrderId} />
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-3 pt-1">

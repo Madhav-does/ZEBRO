@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useStorefront } from "@/hooks/useMarketplace"
+import { useActiveOrders } from "@/hooks/useEscrow"
 import { TrustScoreCard } from "@/features/seller/TrustScoreCard"
 import { SellerAnalyticsCard } from "@/features/seller/SellerAnalyticsCard"
 import { ProductListingForm } from "@/features/seller/ProductListingForm"
@@ -10,6 +11,10 @@ import { Button } from "@/components/ui/button"
 
 export function SellerDashboardView() {
   const { data: storefront, isLoading } = useStorefront("urban_ceramics")
+  const { data: activeOrders = [] } = useActiveOrders()
+  const frozenCount = activeOrders.filter(
+    (o) => o.escrowStatus === "dispute_frozen"
+  ).length
 
   const [isListingFormOpen, setIsListingFormOpen] = useState(false)
   const [isPayoutOpen, setIsPayoutOpen] = useState(false)
@@ -83,7 +88,7 @@ export function SellerDashboardView() {
           className="border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs h-10 rounded-xl flex items-center justify-center gap-1"
         >
           <AlertTriangle className="w-3.5 h-3.5" />
-          <span>Freeze (1)</span>
+          <span>Freeze ({frozenCount})</span>
         </Button>
       </div>
 

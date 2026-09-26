@@ -23,6 +23,8 @@ export function TransitRoutePreview({
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const isPendingIntake = currentStatus === "payment_locked"
+  const isTransit = currentStatus === "in_transit"
   const isDelivered =
     currentStatus === "delivered_inspecting" ||
     currentStatus === "funds_released" ||
@@ -67,7 +69,7 @@ export function TransitRoutePreview({
             Status
           </span>
           <span className="text-xs font-bold font-mono text-emerald-400">
-            {isDelivered ? "Delivered" : "In Transit"}
+            {isDelivered ? "Delivered" : isTransit ? "In Transit" : "Awaiting Carrier Pickup"}
           </span>
         </div>
       </div>

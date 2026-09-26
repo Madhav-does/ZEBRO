@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 
 export function InboxView() {
   const { data: threads, isLoading } = useThreads()
-  const { setShellTab, setIsDisputeOpen } = useAppStore()
+  const { setShellTab, setIsDisputeOpen, setCurrentOrderId, setOrdersSubTab } = useAppStore()
 
   const [activeThread, setActiveThread] = useState<Thread | null>(null)
   const [replyText, setReplyText] = useState("")
@@ -139,6 +139,10 @@ export function InboxView() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
+                    if (activeThread.orderId) {
+                      setCurrentOrderId(activeThread.orderId)
+                    }
+                    setOrdersSubTab("active")
                     setActiveThread(null)
                     setShellTab("orders")
                   }}

@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
+import { useOrder } from "@/hooks/useEscrow"
 import {
   Dialog,
   DialogContent,
@@ -21,12 +22,14 @@ import {
 import { truncateHash } from "@/lib/utils"
 
 export function TrustReceiptModal() {
-  const { isReceiptOpen, setIsReceiptOpen } = useAppStore()
+  const { isReceiptOpen, setIsReceiptOpen, currentOrderId } = useAppStore()
+  const { data: order } = useOrder(currentOrderId)
   const [copiedHash, setCopiedHash] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
 
   const transactionHash =
+    order?.escrowVaultAddress ||
     "0x7a39d841b8f102ca992bc4e7d01859ae3c42e88126bb01fa816928cb901844b2"
 
   const handleCopyHash = () => {
@@ -43,6 +46,23 @@ export function TrustReceiptModal() {
       setTimeout(() => setDownloaded(false), 3000)
     }, 1200)
   }
+
+  const orderNum = order?.orderNumber || "TL-ORD-9824-7128"
+  const sellerHandle = order?.seller.handle ? `@${order.seller.handle}` : "@urban_ceramics"
+  const itemTitle = order?.product.title || "Ceramic Stoneware Vase"
+  const totalAmount = order
+    ? (order.product.price + order.product.shippingFee).toFixed(2)
+    : "132.00"
+
+  const weightStatus = order?.weightAudit.status === "match"
+    ? "PASS ✓"
+    : order?.weightAudit.status === "anomaly"
+    ? "ANOMALY ⚠️"
+    : "PENDING"
+
+  const weightText = order?.weightAudit
+    ? `${order.weightAudit.declaredKg.toFixed(2)} kg / ${order.weightAudit.actualKg.toFixed(2)} kg (${weightStatus})`
+    : "1.20 kg / 1.21 kg (PASS ✓)"
 
   return (
     <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
@@ -65,7 +85,6 @@ export function TrustReceiptModal() {
             {/* SVG QR Code Simulation */}
             <div className="w-20 h-20 bg-white p-1 rounded-xl flex items-center justify-center shadow-inner shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full text-slate-950 fill-current">
-                {/* Clean QR code pattern SVG */}
                 <rect x="10" y="10" width="25" height="25" rx="3" />
                 <rect x="15" y="15" width="15" height="15" fill="white" />
                 <rect x="18" y="18" width="9" height="9" />
@@ -94,7 +113,7 @@ export function TrustReceiptModal() {
                 Escrow Order ID
               </span>
               <p className="font-mono font-bold text-foreground text-sm">
-                TL-ORD-9824-7128
+                {orderNum}
               </p>
               <div className="text-[11px] text-muted-foreground">
                 Verified on Base L2 / Sepolia
@@ -109,27 +128,27 @@ export function TrustReceiptModal() {
           <div className="space-y-2 p-3.5 rounded-2xl bg-muted/20 border border-border/50">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Seller:</span>
-              <span className="font-medium text-foreground">@urban_ceramics</span>
+              <span className="font-medium text-foreground">{sellerHandle}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Buyer:</span>
-              <span className="font-medium text-foreground">Jane Doe</span>
+              <span className="font-medium text-foreground">Verified Buyer</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Item:</span>
-              <span className="font-medium text-foreground">
-                Ceramic Vase (Handmade 1 of 1)
+              <span className="font-medium text-foreground truncate max-w-[200px]">
+                {itemTitle}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Declared vs Actual:</span>
               <span className="font-mono text-emerald-400 font-semibold">
-                1.20 kg / 1.21 kg (PASS)
+                {weightText}
               </span>
             </div>
             <div className="pt-2 border-t border-border/50 flex justify-between font-bold text-sm">
               <span className="text-foreground">Escrow Amount:</span>
-              <span className="font-mono text-emerald-400">$132.00 USD</span>
+              <span className="font-mono text-emerald-400">${totalAmount} USD</span>
             </div>
           </div>
 
@@ -161,29 +180,39 @@ export function TrustReceiptModal() {
             <button
               onClick={handleDownloadPdf}
               disabled={downloading}
-              className="flex items-center justify-center gap-1.5 h-10 rounded-xl bg-card border border-border text-xs font-semibold hover:bg-muted text-foreground transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-border/80 bg-background/60 hover:bg-muted font-semibold text-xs transition-colors"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span>
-                {downloading
-                  ? "Generating..."
-                  : downloaded
-                  ? "Saved PDF!"
-                  : "Download PDF"}
-              </span>
+              {downloaded ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Saved!</span>
+                </>
+              ) : downloading ? (
+                <span>Generating...</span>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </>
+              )}
             </button>
 
             <button
               onClick={() => {
-                navigator.clipboard.writeText(
-                  "https://trustlink.dev/receipt/TL-ORD-9824-7128"
-                )
-                alert("Receipt verification link copied to clipboard!")
+                if (navigator.share) {
+                  navigator.share({
+                    title: `TrustLink Escrow Receipt ${orderNum}`,
+                    text: `Verified cryptographic escrow receipt for ${itemTitle}`,
+                    url: window.location.href,
+                  }).catch(() => {})
+                } else {
+                  handleCopyHash()
+                }
               }}
-              className="flex items-center justify-center gap-1.5 h-10 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-emerald-500/20"
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Share Receipt</span>
+              <span>Share Proof</span>
             </button>
           </div>
         </div>
