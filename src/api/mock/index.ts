@@ -25,6 +25,7 @@ import {
   mockPayouts,
   mockSellerAnalytics,
   mockThreads,
+  mockPastOrders,
 } from './data';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -47,6 +48,7 @@ async function simulateNetworkConditions(): Promise<void> {
 // In-memory runtime state for mutations
 let currentOrder: Order | null = null;
 let lastScenario = '';
+let mockPastOrdersStore: Order[] = [...mockPastOrders];
 
 export class MockApiClient implements ApiClient {
   async getSeller(idOrHandle: string): Promise<Seller> {
@@ -103,8 +105,10 @@ export class MockApiClient implements ApiClient {
     if (lastEvent) {
       lastEvent.status = 'completed';
       lastEvent.title = 'Funds Released to Seller';
-      lastEvent.subtitle = 'USD $85.00 transferred to @urban_ceramics';
+      lastEvent.subtitle = `USD $${(currentOrder.product.price + currentOrder.product.shippingFee).toFixed(2)} transferred to @${currentOrder.seller.handle}`;
     }
+
+    mockPastOrdersStore = [{ ...currentOrder }, ...mockPastOrdersStore];
 
     return {
       success: true,
@@ -243,7 +247,7 @@ export class MockApiClient implements ApiClient {
 
   async getPastOrders(): Promise<Order[]> {
     await simulateNetworkConditions();
-    return [];
+    return [...mockPastOrdersStore];
   }
 
   async triggerDemoScenario(scenario: import('@/types').DemoScenario, _orderId?: string): Promise<any> {

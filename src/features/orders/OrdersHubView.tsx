@@ -22,14 +22,14 @@ export function OrdersHubView() {
   const activeCount = activeOrders.length
   const pastOrdersList = pastOrdersFromApi.map(o => ({
     id: o.id,
-    title: o.product.title,
-    seller: o.seller.handle,
-    price: o.product.price + o.product.shippingFee,
-    image: o.product.images[0] || 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80',
-    status: o.escrowStatus === 'funds_released' ? 'Released to Seller' : o.escrowStatus,
-    date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    verifiedWeight: o.weightAudit.actualKg,
-    txHash: o.escrowVaultAddress ? `${o.escrowVaultAddress.slice(0, 6)}...${o.escrowVaultAddress.slice(-4)}` : '0x8f3a...b12a'
+    title: o?.product?.title || 'Verified Protected Item',
+    seller: o?.seller?.handle || 'creator',
+    price: (o?.product?.price ?? 0) + (o?.product?.shippingFee ?? 0),
+    image: o?.product?.images?.[0] || 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80',
+    status: o?.escrowStatus === 'funds_released' ? 'Released to Seller' : (o?.escrowStatus ?? 'Settled'),
+    date: o?.createdAt ? new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent',
+    verifiedWeight: o?.weightAudit?.actualKg ?? o?.weightAudit?.declaredKg ?? 1.20,
+    txHash: o?.escrowVaultAddress ? `${o.escrowVaultAddress.slice(0, 6)}...${o.escrowVaultAddress.slice(-4)}` : '0x8f3a...b12a'
   }))
 
   return (
@@ -96,20 +96,113 @@ export function OrdersHubView() {
           )}
 
           {activeOrders.length === 0 ? (
-            <div className="p-8 text-center rounded-3xl border border-dashed border-border/80 bg-card/40 space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center">
-                <ShieldCheck className="w-6 h-6" />
+            <div className="space-y-4">
+              <div className="p-6 text-center rounded-3xl border border-dashed border-border/80 bg-card/40 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">No Live In-Transit Escrows</h4>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                  {pastOrdersList.length > 0
+                    ? `You have ${pastOrdersList.length} settled escrow orders in your purchase history.`
+                    : "Purchases made in the Feed or Explore are protected by TrustLink neutral escrow until 48h after verified delivery."}
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                  {pastOrdersList.length > 0 && (
+                    <button
+                      onClick={() => setOrdersSubTab("past")}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                      <span>View Past Orders ({pastOrdersList.length})</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShellTab("home")}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-bold text-xs transition-colors"
+                  >
+                    Discover Goods
+                  </button>
+                </div>
               </div>
-              <h4 className="text-sm font-bold text-foreground">No Active Escrow Orders</h4>
-              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                Purchases made in the Feed or Explore are protected by TrustLink neutral escrow until 48h after verified delivery.
-              </p>
-              <button
-                onClick={() => setShellTab("home")}
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-colors"
-              >
-                Discover Verified Creator Goods
-              </button>
+
+              {/* If past orders exist, preview them right away so history is immediately visible */}
+              {pastOrdersList.length > 0 && (
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+                      Recent Settled Orders ({pastOrdersList.length})
+                    </span>
+                    <button
+                      onClick={() => setOrdersSubTab("past")}
+                      className="text-[11px] text-emerald-400 hover:underline font-medium"
+                    >
+                      View All ➔
+                    </button>
+                  </div>
+
+                  {pastOrdersList.slice(0, 3).map((order) => (
+                    <div
+                      key={order.id}
+                      className="p-3.5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm space-y-3 shadow-xs"
+                    >
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={order.image}
+                          alt={order.title}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80"
+                          }}
+                          className="w-14 h-14 rounded-xl object-cover border border-border/50 shrink-0"
+                        />
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-bold text-foreground truncate">
+                              {order.title}
+                            </span>
+                            <span className="text-xs font-mono font-bold text-foreground shrink-0">
+                              ${order.price.toFixed(2)}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            @{order.seller} · {order.date}
+                          </p>
+
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/25">
+                              <CheckCircle2 className="w-3 h-3" />
+                              {order.status}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-zinc-800/40 px-1.5 py-0.5 rounded border border-border/40">
+                              <Scale className="w-2.5 h-2.5 text-emerald-400" />
+                              {order.verifiedWeight} kg
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px]">
+                        <span className="font-mono text-muted-foreground text-[10px]">
+                          Tx: {order.txHash}
+                        </span>
+
+                        <button
+                          onClick={() => {
+                            setCurrentOrderId(order.id)
+                            setIsReceiptOpen(true)
+                          }}
+                          className="text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 text-[11px]"
+                        >
+                          <span>View Proof Receipt</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <>

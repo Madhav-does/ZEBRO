@@ -645,7 +645,88 @@ export async function seed() {
     evidenceUrls: ['https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&auto=format&fit=crop&q=80'],
   });
 
-  logger.info(`[Seed] Database successfully seeded with 4 sellers, 2 buyers, ${catalog.length} unique listings, and 4 test orders!`);
+  // 5. Create 4 Historical Settled Past Orders (FUNDS_RELEASED)
+  const pastOrder1 = await prisma.order.create({
+    data: {
+      id: 'ord_past_duffle_01',
+      buyerId: buyerAlex.id,
+      sellerId: atelierNordic.id,
+      listingId: 'list_weekend_duffle',
+      status: 'PAYMENT_PENDING',
+      totalCents: 24500,
+      platformFeeCents: 735,
+      transferGroup: 'order_past_duffle_01',
+      declaredWeightG: 1950,
+      carrier: 'USPS',
+      createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000),
+    },
+  });
+  await transition(pastOrder1.id, 'PAYMENT_SUCCEEDED');
+  await transition(pastOrder1.id, 'WEIGHT_SCAN_MATCH', { scannedWeightG: 1980 });
+  await transition(pastOrder1.id, 'DELIVERED', { deliveredAt: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString() });
+  await transition(pastOrder1.id, 'BUYER_CONFIRMED');
+
+  const pastOrder2 = await prisma.order.create({
+    data: {
+      id: 'ord_past_watch_02',
+      buyerId: buyerSarah.id,
+      sellerId: modernMinimal.id,
+      listingId: 'list_watch_07',
+      status: 'PAYMENT_PENDING',
+      totalCents: 21000,
+      platformFeeCents: 630,
+      transferGroup: 'order_past_watch_02',
+      declaredWeightG: 180,
+      carrier: 'USPS',
+      createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000),
+    },
+  });
+  await transition(pastOrder2.id, 'PAYMENT_SUCCEEDED');
+  await transition(pastOrder2.id, 'WEIGHT_SCAN_MATCH', { scannedWeightG: 185 });
+  await transition(pastOrder2.id, 'DELIVERED', { deliveredAt: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() });
+  await transition(pastOrder2.id, 'BUYER_CONFIRMED');
+
+  const pastOrder3 = await prisma.order.create({
+    data: {
+      id: 'ord_past_ring_03',
+      buyerId: buyerAlex.id,
+      sellerId: clayStudio.id,
+      listingId: 'list_ring_04',
+      status: 'PAYMENT_PENDING',
+      totalCents: 13000,
+      platformFeeCents: 390,
+      transferGroup: 'order_past_ring_03',
+      declaredWeightG: 150,
+      carrier: 'USPS',
+      createdAt: new Date(Date.now() - 9 * 24 * 3600 * 1000),
+    },
+  });
+  await transition(pastOrder3.id, 'PAYMENT_SUCCEEDED');
+  await transition(pastOrder3.id, 'WEIGHT_SCAN_MATCH', { scannedWeightG: 155 });
+  await transition(pastOrder3.id, 'DELIVERED', { deliveredAt: new Date(Date.now() - 9 * 24 * 3600 * 1000).toISOString() });
+  await transition(pastOrder3.id, 'BUYER_CONFIRMED');
+
+  const pastOrder4 = await prisma.order.create({
+    data: {
+      id: 'ord_past_valet_04',
+      buyerId: buyerSarah.id,
+      sellerId: urbanCeramics.id,
+      listingId: 'list_home_05',
+      status: 'PAYMENT_PENDING',
+      totalCents: 6800,
+      platformFeeCents: 204,
+      transferGroup: 'order_past_valet_04',
+      declaredWeightG: 550,
+      carrier: 'USPS',
+      createdAt: new Date(Date.now() - 14 * 24 * 3600 * 1000),
+    },
+  });
+  await transition(pastOrder4.id, 'PAYMENT_SUCCEEDED');
+  await transition(pastOrder4.id, 'WEIGHT_SCAN_MATCH', { scannedWeightG: 560 });
+  await transition(pastOrder4.id, 'DELIVERED', { deliveredAt: new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString() });
+  await transition(pastOrder4.id, 'BUYER_CONFIRMED');
+
+  logger.info(`[Seed] Database successfully seeded with 4 sellers, 2 buyers, ${catalog.length} unique listings, 4 active orders, and 4 settled past orders!`);
 }
 
 seed()
