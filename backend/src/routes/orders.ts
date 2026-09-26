@@ -9,7 +9,7 @@ import { formatOrderResponse } from '../services/orders.js';
 const createOrderSchema = z.object({
   listingId: z.string().optional(),
   productId: z.string().optional(),
-  shippingAddress: z.string().optional().default('1042 Congress Ave, Austin, TX 78701'),
+  shippingAddress: z.union([z.string(), z.record(z.any())]).optional().default('1042 Congress Ave, Austin, TX 78701'),
   paymentMethod: z.string().optional().default('Apple Pay (Tokenized)'),
 });
 
@@ -45,10 +45,15 @@ export async function orderRoutes(fastify: FastifyInstance) {
     }
 
     const buyerId = request.headers['x-user-id'] as string | undefined;
+    const shippingAddressStr =
+      typeof body.shippingAddress === 'object' && body.shippingAddress !== null
+        ? Object.values(body.shippingAddress).filter(Boolean).join(', ')
+        : (body.shippingAddress as string);
+
     const result = await escrowService.createOrder({
       buyerId,
       listingId,
-      shippingAddress: body.shippingAddress,
+      shippingAddress: shippingAddressStr,
       paymentMethod: body.paymentMethod,
     });
 

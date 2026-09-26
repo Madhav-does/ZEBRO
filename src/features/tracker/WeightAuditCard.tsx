@@ -6,6 +6,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  ShieldAlert,
+  ArrowRight,
+  Truck,
+  Box,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -14,9 +18,10 @@ interface WeightAuditCardProps {
 }
 
 export function WeightAuditCard({ audit }: WeightAuditCardProps) {
-  const isAnomaly = audit.status === "anomaly"
+  const isTampered = !!audit.tamperDetected
+  const isAnomaly = audit.status === "anomaly" && !isTampered
   const isPending = audit.status === "pending"
-  const isMatch = audit.status === "match"
+  const isMatch = audit.status === "match" && !isTampered
 
   // Scale bounds from 0 to 2.0 kg
   const maxScale = 2.0
@@ -24,6 +29,9 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
   const actualPct = audit.actualKg
     ? Math.min(Math.max((audit.actualKg / maxScale) * 100, 0), 100)
     : 0
+
+  const deliveryKg = audit.deliveryWeightKg || 0.35
+  const deliveryPct = Math.min(Math.max((deliveryKg / maxScale) * 100, 0), 100)
 
   const minToleranceKg = audit.declaredKg - audit.toleranceKg
   const maxToleranceKg = audit.declaredKg + audit.toleranceKg
@@ -33,11 +41,16 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
   const delta = isPending ? 0 : audit.actualKg - audit.declaredKg
   const deltaPct = isPending ? "0.0" : ((delta / audit.declaredKg) * 100).toFixed(1)
 
+  const tamperLossKg = audit.actualKg - deliveryKg
+  const tamperLossPct = ((tamperLossKg / (audit.actualKg || audit.declaredKg)) * 100).toFixed(1)
+
   return (
     <div
       className={cn(
         "rounded-2xl sm:rounded-3xl border p-4 sm:p-5 backdrop-blur-md shadow-sm transition-all",
-        isAnomaly
+        isTampered
+          ? "border-rose-500/50 bg-rose-500/10 shadow-rose-500/10"
+          : isAnomaly
           ? "border-rose-500/50 bg-rose-500/5 shadow-rose-500/10"
           : "border-border/80 bg-card/60"
       )}
@@ -48,7 +61,7 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
           <div
             className={cn(
               "w-9 h-9 rounded-xl flex items-center justify-center transition-colors",
-              isAnomaly
+              isTampered || isAnomaly
                 ? "bg-rose-500/20 text-rose-400"
                 : "bg-emerald-500/10 text-emerald-400"
             )}
@@ -58,14 +71,16 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-sm sm:text-base text-foreground">
-                Carrier Intake Weight Audit
+                {isTampered ? "Dual-Point Telemetry: In-Transit Audit" : "Carrier Intake Weight Audit"}
               </h3>
               <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                 Anti-Scam Telemetry
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Direct telemetry from carrier intake certified postal scale
+              {isTampered
+                ? "Two-point certified weight audit: origin postal scale vs delivery scale"
+                : "Direct telemetry from carrier intake certified postal scale"}
             </p>
           </div>
         </div>
@@ -74,32 +89,69 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
         <div
           className={cn(
             "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border",
+            isTampered && "bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse",
             isMatch && "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
             isAnomaly && "bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse",
             isPending && "bg-amber-500/15 text-amber-400 border-amber-500/30"
           )}
         >
+          {isTampered && <ShieldAlert className="w-3.5 h-3.5" />}
           {isMatch && <CheckCircle2 className="w-3.5 h-3.5" />}
           {isAnomaly && <AlertTriangle className="w-3.5 h-3.5" />}
           {isPending && <Clock className="w-3.5 h-3.5" />}
           <span className="uppercase text-[11px] font-mono tracking-wide">
-            {isMatch ? "Audit Passed" : isAnomaly ? "Weight Anomaly" : "Pending Weigh-In"}
+            {isTampered
+              ? "Tampered in Transit"
+              : isMatch
+              ? "Audit Passed"
+              : isAnomaly
+              ? "Intake Deficit"
+              : "Pending Weigh-In"}
           </span>
         </div>
       </div>
 
-      {/* Main Alert Banner if Anomaly */}
+      {/* IN-TRANSIT TAMPERING BANNER (Scenario B) */}
+      {isTampered && (
+        <div className="mt-4 p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs space-y-2.5">
+          <div className="flex items-center gap-2 font-bold text-rose-200">
+            <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>Carrier In-Transit Theft Confirmed (Dual-Point Telemetry)</span>
+          </div>
+
+          <p className="text-[11px] leading-relaxed text-rose-200">
+            <strong>Origin Scale (#97201):</strong> Verified seller shipped full <strong>{formatWeight(audit.actualKg)}</strong> (Match ✓).<br />
+            <strong>Delivery Arrival Scale:</strong> Measured only <strong>{formatWeight(deliveryKg)}</strong> (-{tamperLossPct}% weight loss).
+          </p>
+
+          <div className="p-2.5 rounded-xl bg-background/60 border border-rose-500/20 text-[11px] text-zinc-300 space-y-1">
+            <div className="flex items-center gap-1.5 text-rose-400 font-semibold">
+              <Truck className="w-3.5 h-3.5" />
+              <span>Carrier Liability Determination:</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 leading-relaxed">
+              Because origin intake scale verified 1.24kg, <strong>seller fraud is completely ruled out</strong>. Package was compromised while under USPS custody between Denver and Austin sorting facilities. Smart contract escrow auto-freezes to protect buyer; carrier insurance covers the seller.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ORIGIN DEFICIT ANOMALY BANNER (Scenario A) */}
       {isAnomaly && (
         <div className="mt-4 p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs space-y-1">
           <div className="flex items-center gap-2 font-bold text-rose-200">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>Fraud Anomaly Detected: Empty or Partial Package</span>
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold block text-rose-200">
+                Origin Intake Deficit: Empty Box / Partial Package
+              </span>
+              <span>
+                Carrier postal scale at origin counter measured <strong>{formatWeight(audit.actualKg)}</strong> vs declared{" "}
+                <strong>{formatWeight(audit.declaredKg)}</strong> ({deltaPct}% variance).
+                Escrow payout is <strong>frozen at origin counter before dispatch</strong>.
+              </span>
+            </div>
           </div>
-          <p className="text-[11px] leading-relaxed text-rose-300">
-            The carrier scale measured <strong>{formatWeight(audit.actualKg)}</strong> vs declared{" "}
-            <strong>{formatWeight(audit.declaredKg)}</strong> ({deltaPct}% variance).
-            Escrow payout is <strong>automatically frozen</strong> to prevent fraud.
-          </p>
           {audit.notes && (
             <p className="text-[10px] text-rose-400/90 font-mono mt-1 pt-1 border-t border-rose-500/30">
               Station Log: {audit.notes}
@@ -118,38 +170,56 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
             {formatWeight(audit.declaredKg)}
           </span>
           <span className="text-[10px] text-muted-foreground block mt-0.5">
-            Seller declared at label creation
+            Seller manifest specification
           </span>
         </div>
 
         <div className="p-3 rounded-xl bg-background/50 border border-border/50">
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
-            Intake Scale Reading
+            Origin Counter Scale
           </span>
           <span
             className={cn(
               "text-base font-bold font-mono",
-              isAnomaly ? "text-rose-400" : isPending ? "text-amber-400" : "text-emerald-400"
+              isAnomaly
+                ? "text-rose-400"
+                : isPending
+                ? "text-amber-400"
+                : "text-emerald-400"
             )}
           >
             {isPending ? "Pending Drop-off" : formatWeight(audit.actualKg)}
           </span>
           <span className="text-[10px] text-muted-foreground block mt-0.5">
-            {isPending ? "Awaiting counter weigh-in" : `Variance: ${deltaPct}%`}
+            {isPending ? "Awaiting counter weigh-in" : isAnomaly ? `${deltaPct}% Deficit` : `Match (NIST-CAL-7718)`}
           </span>
         </div>
 
-        <div className="col-span-2 sm:col-span-1 p-3 rounded-xl bg-background/50 border border-border/50">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
-            Tolerance Range
-          </span>
-          <span className="text-base font-bold font-mono text-foreground">
-            ±{formatWeight(audit.toleranceKg)}
-          </span>
-          <span className="text-[10px] text-muted-foreground block mt-0.5">
-            Allowed: {minToleranceKg.toFixed(2)}kg - {maxToleranceKg.toFixed(2)}kg
-          </span>
-        </div>
+        {isTampered ? (
+          <div className="col-span-2 sm:col-span-1 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30">
+            <span className="text-[10px] text-rose-400 uppercase tracking-wider block font-bold">
+              Delivery Handover Scale
+            </span>
+            <span className="text-base font-bold font-mono text-rose-400">
+              {formatWeight(deliveryKg)}
+            </span>
+            <span className="text-[10px] text-rose-300 block mt-0.5">
+              -{tamperLossPct}% stolen in transit
+            </span>
+          </div>
+        ) : (
+          <div className="col-span-2 sm:col-span-1 p-3 rounded-xl bg-background/50 border border-border/50">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
+              Tolerance Range
+            </span>
+            <span className="text-base font-bold font-mono text-foreground">
+              ±{formatWeight(audit.toleranceKg)}
+            </span>
+            <span className="text-[10px] text-muted-foreground block mt-0.5">
+              Allowed: {minToleranceKg.toFixed(2)}kg - {maxToleranceKg.toFixed(2)}kg
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Helpful note banner when pending dropoff */}
@@ -191,7 +261,7 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
             </div>
           </div>
 
-          {/* Actual scale reading marker (only when verified by scale) */}
+          {/* Origin actual reading marker (only when verified by scale) */}
           {!isPending && audit.actualKg > 0 && (
             <div
               className={cn(
@@ -206,7 +276,19 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
                   isAnomaly ? "bg-rose-400" : "bg-emerald-400"
                 )}
               >
-                Actual: {audit.actualKg}kg
+                {isTampered ? `Origin: ${audit.actualKg}kg ✓` : `Actual: ${audit.actualKg}kg`}
+              </div>
+            </div>
+          )}
+
+          {/* Delivery tampered reading marker (if in-transit tampering occurred) */}
+          {isTampered && (
+            <div
+              className="absolute top-0 bottom-0 w-1.5 bg-rose-500 z-30 transition-all animate-pulse"
+              style={{ left: `${deliveryPct}%` }}
+            >
+              <div className="absolute -bottom-6 -translate-x-1/2 text-[9px] font-mono font-black px-1.5 py-0.5 rounded bg-rose-500 text-white whitespace-nowrap shadow-lg">
+                Arrival: {deliveryKg}kg ⚠️
               </div>
             </div>
           )}
@@ -218,7 +300,9 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
             Acceptable tolerance window
           </span>
           <span className="font-mono text-muted-foreground truncate max-w-xs">
-            {audit.carrierStation} ({audit.scaleId})
+            {isTampered
+              ? "Dual Audit: Portland #97201 ➔ Austin #78701"
+              : `${audit.carrierStation} (${audit.scaleId})`}
           </span>
         </div>
       </div>

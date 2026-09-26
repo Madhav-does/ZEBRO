@@ -207,11 +207,11 @@ export function CarrierSimulatorDrawer({ order }: CarrierSimulatorDrawerProps) {
             )}
           </button>
 
-          {/* Action 5: Dispute Filed */}
+          {/* Action 5: In-Transit Tampering & Delivery Weight Loss */}
           <button
-            onClick={() => handleSimulate("dispute_filed", "dispute")}
+            onClick={() => handleSimulate("transit_tampering", "tampering")}
             disabled={isSimulating}
-            className="w-full p-3 rounded-2xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 transition-all text-left flex items-center justify-between group disabled:opacity-50"
+            className="w-full p-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/15 transition-all text-left flex items-center justify-between group disabled:opacity-50"
           >
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
@@ -219,8 +219,37 @@ export function CarrierSimulatorDrawer({ order }: CarrierSimulatorDrawerProps) {
               </div>
               <div>
                 <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  5. Unboxing Discrepancy Dispute
-                  <span className="text-[10px] font-mono px-1 rounded bg-rose-500/20 text-rose-400">
+                  5. In-Transit Theft & Delivery Loss
+                  <span className="text-[10px] font-mono px-1 rounded bg-rose-500/30 text-rose-300">
+                    TAMPERING
+                  </span>
+                </h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Passes origin counter at {(declaredWeight * 1.035).toFixed(2)}kg, but package is tampered between sorting hubs and delivery scale measures 0.35kg (-71% loss). Dual-point telemetry proves carrier liability.
+                </p>
+              </div>
+            </div>
+            {isSimulating && activeAction === "tampering" ? (
+              <Loader2 className="w-4 h-4 animate-spin text-rose-400 shrink-0" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
+            )}
+          </button>
+
+          {/* Action 6: Dispute Filed */}
+          <button
+            onClick={() => handleSimulate("dispute_filed", "dispute")}
+            disabled={isSimulating}
+            className="w-full p-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-all text-left flex items-center justify-between group disabled:opacity-50"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  6. Unboxing Discrepancy Dispute
+                  <span className="text-[10px] font-mono px-1 rounded bg-amber-500/20 text-amber-300">
                     DISPUTE
                   </span>
                 </h4>
@@ -230,7 +259,7 @@ export function CarrierSimulatorDrawer({ order }: CarrierSimulatorDrawerProps) {
               </div>
             </div>
             {isSimulating && activeAction === "dispute" ? (
-              <Loader2 className="w-4 h-4 animate-spin text-rose-400 shrink-0" />
+              <Loader2 className="w-4 h-4 animate-spin text-amber-400 shrink-0" />
             ) : (
               <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
             )}

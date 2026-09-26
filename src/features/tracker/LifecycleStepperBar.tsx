@@ -15,6 +15,7 @@ import {
   Box,
   KeyRound,
   AlertTriangle,
+  ShieldAlert,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -70,7 +71,7 @@ export function LifecycleStepperBar({ order }: LifecycleStepperBarProps) {
     },
   ]
 
-  const handleAdvance = async (scenario: "merchant_dropoff" | "out_for_delivery" | "release_funds") => {
+  const handleAdvance = async (scenario: import("@/types").DemoScenario) => {
     setIsAdvancing(true)
     setDemoScenario(scenario)
 
@@ -174,11 +175,25 @@ export function LifecycleStepperBar({ order }: LifecycleStepperBarProps) {
               ) : (
                 <>
                   <Scale className="w-4 h-4 text-slate-950" />
-                  <span>Advance: Simulate Merchant Drop-off & Postal Scale Scan</span>
+                  <span>Advance: Simulate Merchant Drop-off & Postal Scale Scan (Pass)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
                 </>
               )}
             </button>
+
+            {/* Test Fraud Alternative Button for Scenario 1 */}
+            <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[10px]">
+              <span className="text-muted-foreground">Test Intake Fraud:</span>
+              <button
+                onClick={() => handleAdvance("weight_mismatch")}
+                disabled={isAdvancing}
+                className="font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                title="Simulate merchant dropping off an empty box with 66% weight deficit"
+              >
+                <AlertTriangle className="w-3 h-3 text-rose-400" />
+                <span>Simulate Origin Weight Anomaly (-66% Empty Box)</span>
+              </button>
+            </div>
           </>
         )}
 
@@ -190,7 +205,7 @@ export function LifecycleStepperBar({ order }: LifecycleStepperBarProps) {
                 <span>Next Lifecycle Event: Courier Doorstep Delivery & Handover</span>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Scale audit PASSED ({order.weightAudit.actualKg} kg verified vs {order.weightAudit.declaredKg} kg declared). The package is in transit across sorting hubs. Advance to simulate courier arrival at customer doorstep with OTP verification.
+                Origin scale audit PASSED ({order.weightAudit.actualKg} kg verified vs {order.weightAudit.declaredKg} kg declared). The package is in transit across sorting hubs. Advance to simulate normal delivery, or test in-transit theft where contents are stolen before doorstep arrival.
               </p>
             </div>
 
@@ -207,11 +222,25 @@ export function LifecycleStepperBar({ order }: LifecycleStepperBarProps) {
               ) : (
                 <>
                   <KeyRound className="w-4 h-4 text-slate-950" />
-                  <span>Advance: Simulate Courier Doorstep Delivery (Starts 48s Clock)</span>
+                  <span>Advance: Simulate Courier Doorstep Delivery (Normal)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
                 </>
               )}
             </button>
+
+            {/* Test Fraud Alternative Button for Scenario 2 */}
+            <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[10px]">
+              <span className="text-muted-foreground">Test In-Transit Theft:</span>
+              <button
+                onClick={() => handleAdvance("transit_tampering")}
+                disabled={isAdvancing}
+                className="font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                title="Simulate package being tampered/emptied while in transit between sorting hubs"
+              >
+                <AlertTriangle className="w-3 h-3 text-rose-400" />
+                <span>Simulate In-Transit Theft (1.24kg ➔ 0.35kg Loss)</span>
+              </button>
+            </div>
           </>
         )}
 
@@ -280,14 +309,39 @@ export function LifecycleStepperBar({ order }: LifecycleStepperBarProps) {
         )}
 
         {isFrozen && (
-          <div className="space-y-1 text-xs text-rose-300">
-            <div className="flex items-center gap-1.5 font-bold text-rose-400">
-              <AlertTriangle className="w-4 h-4 text-rose-400" />
-              <span>Escrow State Frozen</span>
+          <div className="space-y-2.5 text-xs text-rose-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-rose-400">
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                <span>
+                  {order.weightAudit.tamperDetected
+                    ? "In-Transit Tampering Detected — Smart Contract Frozen"
+                    : "Origin Scale Deficit — Escrow Frozen at Counter"}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                Arbitration Active
+              </span>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Automated protection active. Neutral arbitrator has been assigned to review carrier telemetry.
+
+            <p className="text-[11px] text-zinc-300 leading-relaxed">
+              {order.weightAudit.tamperDetected
+                ? "Dual-point telemetry confirms origin intake passed (1.24kg) but delivery scale logged 0.35kg (-71.8% loss). Seller shipped genuine item; loss occurred under USPS carrier custody. Buyer is 100% protected."
+                : "Origin scale caught empty box / 66% deficit before dispatch. Funds remain locked in neutral vault; seller has received zero payout."}
             </p>
+
+            <div className="flex items-center justify-between pt-2 border-t border-rose-500/30">
+              <span className="text-[10px] text-muted-foreground">
+                Automatic protection resolution ready:
+              </span>
+              <button
+                onClick={() => handleAdvance("merchant_dropoff")}
+                disabled={isAdvancing}
+                className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <span>Reset to Legitimate Scale Pass ➔</span>
+              </button>
+            </div>
           </div>
         )}
       </div>

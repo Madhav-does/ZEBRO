@@ -22,7 +22,7 @@ import {
   QrCode,
   FileCheck2,
 } from "lucide-react"
-import { truncateHash } from "@/lib/utils"
+import { cn, truncateHash } from "@/lib/utils"
 
 export function TrustReceiptModal() {
   const { isReceiptOpen, setIsReceiptOpen, currentOrderId } = useAppStore()
@@ -294,10 +294,16 @@ Verified on TrustLink Protocol: https://trustlink.network/verify/${orderNum}`
               </span>
             </div>
 
-            {/* Approved Stamp */}
-            <div className="border-2 border-emerald-500/80 text-emerald-400 text-[10px] font-mono font-black px-2 py-1 rounded rotate-[-4deg] tracking-wider uppercase bg-emerald-500/10 shadow-sm">
-              ✓ PASSED & SETTLED
-            </div>
+            {/* Approved / Tampered Stamp */}
+            {resolvedOrder?.weightAudit.tamperDetected ? (
+              <div className="border-2 border-rose-500/80 text-rose-400 text-[10px] font-mono font-black px-2 py-1 rounded rotate-[-4deg] tracking-wider uppercase bg-rose-500/10 shadow-sm">
+                ⚠️ TAMPERED IN TRANSIT
+              </div>
+            ) : (
+              <div className="border-2 border-emerald-500/80 text-emerald-400 text-[10px] font-mono font-black px-2 py-1 rounded rotate-[-4deg] tracking-wider uppercase bg-emerald-500/10 shadow-sm">
+                ✓ PASSED & SETTLED
+              </div>
+            )}
           </div>
 
           {/* Product & Participants Row */}
@@ -341,29 +347,49 @@ Verified on TrustLink Protocol: https://trustlink.network/verify/${orderNum}`
           </div>
 
           {/* Carrier Postal Scale Tare Telemetry */}
-          <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
-            <div className="flex items-center justify-between text-[10px] uppercase font-mono font-bold text-emerald-400">
-              <span className="flex items-center gap-1">
+          <div className={cn(
+            "p-3 rounded-xl border space-y-2",
+            resolvedOrder?.weightAudit.tamperDetected
+              ? "bg-rose-950/20 border-rose-500/40"
+              : "bg-emerald-950/20 border-emerald-500/30"
+          )}>
+            <div className="flex items-center justify-between text-[10px] uppercase font-mono font-bold">
+              <span className={cn("flex items-center gap-1", resolvedOrder?.weightAudit.tamperDetected ? "text-rose-400" : "text-emerald-400")}>
                 <Scale className="w-3.5 h-3.5" />
-                Postal Scale Tare Telemetry
+                {resolvedOrder?.weightAudit.tamperDetected ? "Dual-Point Telemetry Audit" : "Postal Scale Tare Telemetry"}
               </span>
-              <span>{scaleId}</span>
+              <span className="text-zinc-400">{scaleId}</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-              <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
-                <span className="text-[10px] text-zinc-400 block">Declared Manifest</span>
-                <span className="font-bold text-zinc-200">{declaredKg} kg</span>
+            {resolvedOrder?.weightAudit.tamperDetected ? (
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
+                  <span className="text-[10px] text-zinc-400 block">Origin Intake Scale</span>
+                  <span className="font-bold text-emerald-400">{actualKg} kg (PASS ✓)</span>
+                </div>
+                <div className="bg-rose-950/40 p-2 rounded-lg border border-rose-500/40">
+                  <span className="text-[10px] text-rose-300 block">Delivery Arrival Scale</span>
+                  <span className="font-bold text-rose-400">0.35 kg (DEFICIT ⚠️)</span>
+                </div>
               </div>
-              <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
-                <span className="text-[10px] text-zinc-400 block">Counter Scale Audit</span>
-                <span className="font-bold text-emerald-400">{actualKg} kg ({weightStatus})</span>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
+                  <span className="text-[10px] text-zinc-400 block">Declared Manifest</span>
+                  <span className="font-bold text-zinc-200">{declaredKg} kg</span>
+                </div>
+                <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-800">
+                  <span className="text-[10px] text-zinc-400 block">Counter Scale Audit</span>
+                  <span className="font-bold text-emerald-400">{actualKg} kg ({weightStatus})</span>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono pt-1 border-t border-zinc-800/80">
               <span>Doorstep OTP: {otp}</span>
-              <span className="truncate max-w-[170px]">{station}</span>
+              <span className="truncate max-w-[170px]">
+                {resolvedOrder?.weightAudit.tamperDetected ? "USPS Carrier Custody Claim" : station}
+              </span>
             </div>
           </div>
 

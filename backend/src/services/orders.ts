@@ -51,6 +51,26 @@ export function formatOrderResponse(order: FullOrder) {
   const isMatch = order.weightAuditResult === 'MATCH';
   const isDispute = order.status === 'ESCROW_FROZEN' || !!order.dispute;
 
+  // Detect in-transit tampering event / dispute
+  const tamperEvt = (order.events || []).find((e) => {
+    try {
+      const p = JSON.parse(e.payload || '{}');
+      return p.reason === 'transit_tampering' || p.tamperLocation || p.deliveryWeightG;
+    } catch {
+      return false;
+    }
+  });
+  const isTampered = order.dispute?.reason === 'transit_tampering' || !!tamperEvt;
+  let deliveryWeightKg = 0.35;
+  let tamperLocation = 'Between Denver Air Freight Hub and Austin Delivery Terminal';
+  if (tamperEvt) {
+    try {
+      const p = JSON.parse(tamperEvt.payload || '{}');
+      if (p.deliveryWeightG) deliveryWeightKg = Number((p.deliveryWeightG / 1000).toFixed(2));
+      if (p.tamperLocation) tamperLocation = p.tamperLocation;
+    } catch {}
+  }
+
   const windowSec = timers.getWindowSeconds();
   let remainingSec = 0;
   if (order.status === 'DELIVERED' && order.inspectionDeadline) {
@@ -90,7 +110,7 @@ export function formatOrderResponse(order: FullOrder) {
     ? Number((order.scannedWeightG / 1000).toFixed(2))
     : isAnomaly
     ? 0.4
-    : isMatch || isReleasedOrDelivered
+    : isMatch || isReleasedOrDelivered || isTampered
     ? declaredKg
     : 0;
   const toleranceKg = Number((Math.max(Math.round(order.declaredWeightG * 0.1), 50) / 1000).toFixed(2));
@@ -146,17 +166,26 @@ export function formatOrderResponse(order: FullOrder) {
 
     weightAudit: {
       declaredKg,
-      actualKg: actualKg || (isReleasedOrDelivered ? declaredKg : 0),
+      actualKg: actualKg || (isReleasedOrDelivered || isTampered ? declaredKg : 0),
       toleranceKg,
-      status: isAnomaly ? 'anomaly' : (isMatch || isReleasedOrDelivered) ? 'match' : 'pending',
-      scannedAt: (order.scannedWeightG || isReleasedOrDelivered) ? order.updatedAt.toISOString() : null,
+      status: isAnomaly ? 'anomaly' : (isMatch || isReleasedOrDelivered || isTampered) ? 'match' : 'pending',
+      scannedAt: (order.scannedWeightG || isReleasedOrDelivered || isTampered) ? order.updatedAt.toISOString() : null,
       carrierStation: 'Portland Station #97201 — Postal Scale #4',
       scaleId: 'NIST-CAL-7718',
-      notes: isAnomaly
-        ? `CRITICAL MISMATCH: Parcel weighs ${actualKg} kg vs declared ${declaredKg} kg. Anomaly flagged and escrow frozen.`
+      notes: isTampered
+        ? `IN-TRANSIT TAMPERING DETECTED: Origin intake scale verified genuine ${order.scannedWeightG ? (order.scannedWeightG / 1000).toFixed(2) : declaredKg} kg, but destination delivery scale measured ${deliveryWeightKg} kg (-${(((declaredKg - deliveryWeightKg) / declaredKg) * 100).toFixed(1)}% deficit). Security seal compromised while in carrier custody.`
+        : isAnomaly
+        ? `CRITICAL INTAKE DEFICIT: Parcel weighs ${actualKg} kg vs declared ${declaredKg} kg (-66.7% deficit). Origin deficit flagged and escrow frozen before dispatch.`
         : (isMatch || isReleasedOrDelivered)
         ? `Weight within certified postal tolerance (${actualKg || declaredKg} kg verified on certified scale).`
         : `Awaiting merchant package drop-off at USPS Station #97201. Certified postal scale tare verification will execute automatically upon intake.`,
+
+      deliveryWeightKg: isTampered ? deliveryWeightKg : undefined,
+      deliveryStatus: isTampered ? 'anomaly' : undefined,
+      deliveryStation: isTampered ? 'Austin Regional Sorting Facility — Scale #2' : undefined,
+      deliveryScaleId: isTampered ? 'NIST-CAL-9912' : undefined,
+      tamperDetected: isTampered,
+      tamperLocation: isTampered ? tamperLocation : undefined,
     },
 
     transitRoute: {
@@ -165,56 +194,110 @@ export function formatOrderResponse(order: FullOrder) {
       currentProgress:
         order.status === 'FUNDS_RELEASED' || order.status === 'DELIVERED'
           ? 100
+          : isTampered
+          ? 75
           : order.status === 'IN_TRANSIT'
           ? 65
           : order.status === 'HELD_IN_ESCROW'
           ? 25
           : 5,
-      eta: order.deliveredAt
+      eta: isTampered
+        ? 'Transit Halted: In-Transit Tampering Detected at Austin Sorting Facility'
+        : isAnomaly
+        ? 'Intake Halted: Weight Deficit Flagged at USPS Station #97201'
+        : order.deliveredAt
         ? 'Delivered Today'
         : order.status === 'IN_TRANSIT'
         ? 'In Transit via USPS Priority Mail (ETA 2 Days)'
         : 'Awaiting Merchant Courier Drop-Off',
-      checkpoints: [
-        {
-          name: 'Merchant Package Preparation & Label Printed',
-          time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          passed: true,
-          current: order.status === 'HELD_IN_ESCROW',
-        },
-        {
-          name: 'USPS Station #97201 — Postal Scale Tare Intake Scan',
-          time: order.status !== 'HELD_IN_ESCROW' && order.status !== 'PAYMENT_PENDING'
-            ? new Date(order.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : 'Pending Drop-Off',
-          passed: order.status !== 'HELD_IN_ESCROW' && order.status !== 'PAYMENT_PENDING',
-          current: order.status === 'IN_TRANSIT',
-        },
-        {
-          name: 'Denver Logistics Hub — Regional Air Freight Sorting',
-          time: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED'
-            ? 'Completed'
-            : order.status === 'IN_TRANSIT'
-            ? 'In Sorting'
-            : 'Upcoming',
-          passed: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED',
-        },
-        {
-          name: 'Austin Regional Sorting Facility — Loaded on Truck',
-          time: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED'
-            ? 'Completed'
-            : 'Upcoming',
-          passed: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED',
-        },
-        {
-          name: 'Delivered to Front Door — OTP Handover',
-          time: order.deliveredAt
-            ? new Date(order.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : 'Pending Delivery',
-          passed: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED',
-          current: order.status === 'DELIVERED',
-        },
-      ],
+      checkpoints: isTampered
+        ? [
+            {
+              name: 'Merchant Package Preparation & Label Printed',
+              time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              passed: true,
+            },
+            {
+              name: 'USPS Station #97201 — Postal Scale Tare Intake Scan',
+              time: new Date(order.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              passed: true,
+            },
+            {
+              name: 'Denver Logistics Hub — Regional Air Freight Sorting',
+              time: 'Completed',
+              passed: true,
+            },
+            {
+              name: `Austin Regional Sorting Facility — Weight Anomaly Flagged (${deliveryWeightKg}kg - Cut Seal)`,
+              time: 'ALERT FLAGGED',
+              passed: false,
+              current: true,
+            },
+            {
+              name: 'Escrow Vault Auto-Frozen — Carrier Liability Insurance Claim',
+              time: 'Frozen',
+              passed: false,
+            },
+          ]
+        : isAnomaly
+        ? [
+            {
+              name: 'Merchant Package Preparation & Label Printed',
+              time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              passed: true,
+            },
+            {
+              name: 'USPS Station #97201 — Postal Scale Tare Scan: 0.40kg (-66.7% DEFICIT)',
+              time: 'ANOMALY DETECTED',
+              passed: false,
+              current: true,
+            },
+            {
+              name: 'Escrow Vault Auto-Frozen — Seller Payout Blocked Before Dispatch',
+              time: 'Frozen',
+              passed: false,
+            },
+          ]
+        : [
+            {
+              name: 'Merchant Package Preparation & Label Printed',
+              time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              passed: true,
+              current: order.status === 'HELD_IN_ESCROW',
+            },
+            {
+              name: 'USPS Station #97201 — Postal Scale Tare Intake Scan',
+              time: order.status !== 'HELD_IN_ESCROW' && order.status !== 'PAYMENT_PENDING'
+                ? new Date(order.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'Pending Drop-Off',
+              passed: order.status !== 'HELD_IN_ESCROW' && order.status !== 'PAYMENT_PENDING',
+              current: order.status === 'IN_TRANSIT',
+            },
+            {
+              name: 'Denver Logistics Hub — Regional Air Freight Sorting',
+              time: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED'
+                ? 'Completed'
+                : order.status === 'IN_TRANSIT'
+                ? 'In Sorting'
+                : 'Upcoming',
+              passed: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED',
+            },
+            {
+              name: 'Austin Regional Sorting Facility — Loaded on Truck',
+              time: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED'
+                ? 'Completed'
+                : 'Upcoming',
+              passed: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED',
+            },
+            {
+              name: 'Delivered to Front Door — OTP Handover',
+              time: order.deliveredAt
+                ? new Date(order.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'Pending Delivery',
+              passed: order.status === 'DELIVERED' || order.status === 'FUNDS_RELEASED',
+              current: order.status === 'DELIVERED',
+            },
+          ],
     },
 
     trackingEvents: events,

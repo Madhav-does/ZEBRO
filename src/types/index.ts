@@ -46,10 +46,16 @@ export interface WeightAudit {
   actualKg: number;
   toleranceKg: number;
   status: 'match' | 'anomaly' | 'pending';
-  scannedAt: string;
+  scannedAt: string | null;
   carrierStation: string;
   scaleId: string;
   notes?: string;
+  deliveryWeightKg?: number;
+  deliveryStatus?: 'match' | 'anomaly' | 'pending';
+  deliveryStation?: string;
+  deliveryScaleId?: string;
+  tamperDetected?: boolean;
+  tamperLocation?: string;
 }
 
 export interface TrackingCheckpoint {
@@ -132,6 +138,7 @@ export type DemoScenario =
   | 'out_for_delivery'
   | 'perfect_delivery' 
   | 'weight_mismatch' 
+  | 'transit_tampering'
   | 'dispute_filed'
   | 'release_funds';
 

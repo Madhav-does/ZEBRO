@@ -14,6 +14,7 @@ import {
   RefreshCw,
   FileText,
   Lock,
+  ShieldAlert,
 } from "lucide-react"
 
 export function TrackerView({ orderId }: { orderId?: string } = {}) {
@@ -54,8 +55,9 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
     )
   }
 
-  const isAnomaly = demoScenario === "weight_mismatch"
-  const isDisputed = demoScenario === "dispute_filed" || order.escrowStatus === "dispute_frozen"
+  const isAnomaly = demoScenario === "weight_mismatch" || order.weightAudit.status === "anomaly"
+  const isTampered = demoScenario === "transit_tampering" || !!order.weightAudit.tamperDetected
+  const isDisputed = demoScenario === "dispute_filed" || (order.escrowStatus === "dispute_frozen" && !isTampered && !isAnomaly)
   const totalAmount = order.product.price + order.product.shippingFee
 
   const getStatusLabel = () => {
@@ -123,6 +125,21 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
               <span>
                 Carrier intake scale logged a significant weight deficit.
                 Payout to creator has been paused pending unboxing confirmation.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {isTampered && (
+          <div className="mt-4 p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5">
+            <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold block text-rose-200">
+                In-Transit Theft Detected: Carrier Liability Flagged
+              </span>
+              <span>
+                Origin postal scale verified {order.weightAudit.actualKg}kg dispatched, but destination arrival scan measured only {order.weightAudit.deliveryWeightKg || 0.35}kg (-71% loss).
+                Escrow vault is frozen to protect the buyer; carrier insurance covers the seller.
               </span>
             </div>
           </div>

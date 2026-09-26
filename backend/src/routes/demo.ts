@@ -12,6 +12,7 @@ const scenarioSchema = z.object({
     'out_for_delivery',
     'perfect_delivery',
     'weight_mismatch',
+    'transit_tampering',
     'dispute_filed',
     'release_funds',
   ]),
@@ -23,8 +24,7 @@ function delay(ms: number) {
 }
 
 export async function demoRoutes(fastify: FastifyInstance) {
-  // POST /demo/scenario
-  fastify.post('/demo/scenario', async (request: FastifyRequest) => {
+  const handleScenario = async (request: FastifyRequest) => {
     const { scenario, orderId: targetOrderId } = scenarioSchema.parse(request.body || {});
 
     let orderId = targetOrderId;
@@ -137,6 +137,31 @@ export async function demoRoutes(fastify: FastifyInstance) {
           alert: 'EMPTY BOX DEFICIT: Weight is -66.7% below seller manifest',
         });
       }
+    } else if (scenario === 'transit_tampering') {
+      // Scenario B: Passed at origin counter scale, but stolen in transit before/at delivery
+      if (current?.status === 'HELD_IN_ESCROW') {
+        const declared = current.declaredWeightG;
+        const matchedWeight = declared + Math.round(declared * 0.03) + 20;
+        await transition(orderId, 'WEIGHT_SCAN_MATCH', {
+          scannedWeightG: matchedWeight,
+          carrierStation: 'Portland Sorting Hub #97201 — Postal Scale #4',
+        });
+        await delay(150);
+        current = await prisma.order.findUnique({ where: { id: orderId } });
+      }
+
+      if (current?.status === 'IN_TRANSIT' || current?.status === 'DELIVERED') {
+        await transition(orderId, 'DISPUTE_OPENED', {
+          reason: 'transit_tampering',
+          description: 'CARRIER IN-TRANSIT TAMPERING: Origin intake scale verified genuine weight (PASS), but destination arrival weight dropped to 0.35kg (-71.8% loss). Package security tape cut and contents stolen while in USPS carrier custody.',
+          originWeightG: current.scannedWeightG || current.declaredWeightG,
+          deliveryWeightG: 350,
+          tamperLocation: 'Between Denver Air Freight Hub and Austin Delivery Terminal',
+          evidenceUrls: [
+            'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&auto=format&fit=crop&q=80',
+          ],
+        });
+      }
     } else if (scenario === 'dispute_filed') {
       // Advance to DELIVERED if needed
       if (current?.status === 'HELD_IN_ESCROW') {
@@ -182,7 +207,11 @@ export async function demoRoutes(fastify: FastifyInstance) {
       scenario,
       order: formatOrderResponse(finalOrder as any),
     };
-  });
+  };
+
+  // Support both /demo/scenario and /demo/simulate
+  fastify.post('/demo/scenario', handleScenario);
+  fastify.post('/demo/simulate', handleScenario);
 
   // GET /demo/orders
   fastify.get('/demo/orders', async () => {
