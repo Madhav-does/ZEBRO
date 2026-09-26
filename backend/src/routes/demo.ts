@@ -7,7 +7,14 @@ import { formatOrderResponse } from '../services/orders.js';
 import { logger } from '../lib/logger.js';
 
 const scenarioSchema = z.object({
-  scenario: z.enum(['perfect_delivery', 'weight_mismatch', 'dispute_filed']),
+  scenario: z.enum([
+    'merchant_dropoff',
+    'out_for_delivery',
+    'perfect_delivery',
+    'weight_mismatch',
+    'dispute_filed',
+    'release_funds',
+  ]),
   orderId: z.string().optional(),
 });
 
@@ -48,20 +55,50 @@ export async function demoRoutes(fastify: FastifyInstance) {
         method: 'Apple Pay (Tokenized)',
         authorizedAt: new Date().toISOString(),
       });
-      await delay(300);
+      await delay(200);
       current = await prisma.order.findUnique({ where: { id: orderId } });
     }
 
-    if (scenario === 'perfect_delivery') {
-      // Step 2: Postal Scale Intake Match (e.g. 1250g for 1200g declared)
+    if (scenario === 'merchant_dropoff') {
+      // Step 2: Merchant delivers parcel to postal clerk -> Scale matches tare weight
       if (current?.status === 'HELD_IN_ESCROW') {
         const declared = current.declaredWeightG;
-        const matchedWeight = declared + Math.round(declared * 0.04); // +4%
+        const matchedWeight = declared + Math.round(declared * 0.03) + 20; // +3.5%
         await transition(orderId, 'WEIGHT_SCAN_MATCH', {
           scannedWeightG: matchedWeight,
-          carrierStation: 'Portland Station #97201 — Postal Scale #4',
+          carrierStation: 'Portland Sorting Hub #97201 — Postal Scale #4',
         });
-        await delay(300);
+      }
+    } else if (scenario === 'out_for_delivery') {
+      // Advance to IN_TRANSIT if held
+      if (current?.status === 'HELD_IN_ESCROW') {
+        const declared = current.declaredWeightG;
+        const matchedWeight = declared + Math.round(declared * 0.03) + 20;
+        await transition(orderId, 'WEIGHT_SCAN_MATCH', {
+          scannedWeightG: matchedWeight,
+          carrierStation: 'Portland Sorting Hub #97201 — Postal Scale #4',
+        });
+        await delay(200);
+        current = await prisma.order.findUnique({ where: { id: orderId } });
+      }
+
+      // Out for delivery -> Delivered to doorstep (Starts 48s inspection countdown)
+      if (current?.status === 'IN_TRANSIT') {
+        await transition(orderId, 'DELIVERED', {
+          deliveredAt: new Date().toISOString(),
+          location: 'Austin, TX (Doorstep Delivery Confirmed with OTP)',
+        });
+      }
+    } else if (scenario === 'perfect_delivery') {
+      // Step 2: Postal Scale Intake Match (e.g. 1240g for 1200g declared)
+      if (current?.status === 'HELD_IN_ESCROW') {
+        const declared = current.declaredWeightG;
+        const matchedWeight = declared + Math.round(declared * 0.03) + 20;
+        await transition(orderId, 'WEIGHT_SCAN_MATCH', {
+          scannedWeightG: matchedWeight,
+          carrierStation: 'Portland Sorting Hub #97201 — Postal Scale #4',
+        });
+        await delay(400);
         current = await prisma.order.findUnique({ where: { id: orderId } });
       }
 
@@ -69,7 +106,26 @@ export async function demoRoutes(fastify: FastifyInstance) {
       if (current?.status === 'IN_TRANSIT') {
         await transition(orderId, 'DELIVERED', {
           deliveredAt: new Date().toISOString(),
-          location: 'Austin, TX (Doorstep Delivery Confirmed)',
+          location: 'Austin, TX (Doorstep Delivery Confirmed with OTP)',
+        });
+      }
+    } else if (scenario === 'release_funds') {
+      if (current?.status === 'HELD_IN_ESCROW' || current?.status === 'IN_TRANSIT') {
+        await transition(orderId, 'WEIGHT_SCAN_MATCH', {
+          scannedWeightG: current.declaredWeightG,
+          carrierStation: 'Portland Sorting Hub #97201 — Postal Scale #4',
+        });
+        await delay(100);
+        await transition(orderId, 'DELIVERED', {
+          deliveredAt: new Date().toISOString(),
+        });
+        await delay(100);
+        current = await prisma.order.findUnique({ where: { id: orderId } });
+      }
+      if (current?.status === 'DELIVERED') {
+        await transition(orderId, 'BUYER_CONFIRMED', {
+          confirmedBy: 'buyer',
+          confirmedAt: new Date().toISOString(),
         });
       }
     } else if (scenario === 'weight_mismatch') {
@@ -77,12 +133,12 @@ export async function demoRoutes(fastify: FastifyInstance) {
       if (current?.status === 'HELD_IN_ESCROW') {
         await transition(orderId, 'WEIGHT_SCAN_ANOMALY', {
           scannedWeightG: 400,
-          carrierStation: 'Portland Station #97201 — Postal Scale #4',
+          carrierStation: 'Portland Sorting Hub #97201 — Postal Scale #4',
           alert: 'EMPTY BOX DEFICIT: Weight is -66.7% below seller manifest',
         });
       }
     } else if (scenario === 'dispute_filed') {
-      // Step 2 & 3: Advance to DELIVERED if needed
+      // Advance to DELIVERED if needed
       if (current?.status === 'HELD_IN_ESCROW') {
         await transition(orderId, 'WEIGHT_SCAN_MATCH', {
           scannedWeightG: current.declaredWeightG,

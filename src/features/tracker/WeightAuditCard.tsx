@@ -30,8 +30,8 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
   const minTolerancePct = Math.max((minToleranceKg / maxScale) * 100, 0)
   const maxTolerancePct = Math.min((maxToleranceKg / maxScale) * 100, 100)
 
-  const delta = audit.actualKg - audit.declaredKg
-  const deltaPct = ((delta / audit.declaredKg) * 100).toFixed(1)
+  const delta = isPending ? 0 : audit.actualKg - audit.declaredKg
+  const deltaPct = isPending ? "0.0" : ((delta / audit.declaredKg) * 100).toFixed(1)
 
   return (
     <div
@@ -129,13 +129,13 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
           <span
             className={cn(
               "text-base font-bold font-mono",
-              isAnomaly ? "text-rose-400" : "text-emerald-400"
+              isAnomaly ? "text-rose-400" : isPending ? "text-amber-400" : "text-emerald-400"
             )}
           >
-            {formatWeight(audit.actualKg)}
+            {isPending ? "Pending Drop-off" : formatWeight(audit.actualKg)}
           </span>
           <span className="text-[10px] text-muted-foreground block mt-0.5">
-            Variance: {deltaPct}%
+            {isPending ? "Awaiting counter weigh-in" : `Variance: ${deltaPct}%`}
           </span>
         </div>
 
@@ -151,6 +151,16 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
           </span>
         </div>
       </div>
+
+      {/* Helpful note banner when pending dropoff */}
+      {isPending && (
+        <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center gap-2">
+          <Clock className="w-4 h-4 shrink-0 text-amber-400" />
+          <span>
+            {audit.notes || "Merchant is packaging order. Postal scale intake tare scan will execute when dropped off at USPS counter."}
+          </span>
+        </div>
+      )}
 
       {/* Visual Weight Tolerance Bar */}
       <div className="mt-5 space-y-2">
@@ -181,23 +191,25 @@ export function WeightAuditCard({ audit }: WeightAuditCardProps) {
             </div>
           </div>
 
-          {/* Actual scale reading marker */}
-          <div
-            className={cn(
-              "absolute top-0 bottom-0 w-1 z-20 transition-all",
-              isAnomaly ? "bg-rose-500" : "bg-emerald-400"
-            )}
-            style={{ left: `${actualPct}%` }}
-          >
+          {/* Actual scale reading marker (only when verified by scale) */}
+          {!isPending && audit.actualKg > 0 && (
             <div
               className={cn(
-                "absolute -bottom-6 -translate-x-1/2 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-black whitespace-nowrap shadow-md",
-                isAnomaly ? "bg-rose-400" : "bg-emerald-400"
+                "absolute top-0 bottom-0 w-1 z-20 transition-all",
+                isAnomaly ? "bg-rose-500" : "bg-emerald-400"
               )}
+              style={{ left: `${actualPct}%` }}
             >
-              Actual: {audit.actualKg}kg
+              <div
+                className={cn(
+                  "absolute -bottom-6 -translate-x-1/2 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-black whitespace-nowrap shadow-md",
+                  isAnomaly ? "bg-rose-400" : "bg-emerald-400"
+                )}
+              >
+                Actual: {audit.actualKg}kg
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-4">

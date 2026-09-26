@@ -214,14 +214,14 @@ class RealApiClient implements ApiClient {
     }
   }
 
-  async triggerDemoScenario(scenario: DemoScenario): Promise<any> {
+  async triggerDemoScenario(scenario: DemoScenario, orderId?: string): Promise<any> {
     try {
       return await this.request<any>('/demo/scenario', {
         method: 'POST',
-        body: JSON.stringify({ scenario }),
+        body: JSON.stringify({ scenario, orderId }),
       });
     } catch {
-      return mockFallback.triggerDemoScenario(scenario);
+      return mockFallback.triggerDemoScenario(scenario, orderId);
     }
   }
 }

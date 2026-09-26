@@ -58,6 +58,18 @@ export const TRANSITIONS: TransitionRule[] = [
     description: 'Intake weight deficit flagged, vault automatically frozen',
   },
   {
+    from: 'HELD_IN_ESCROW',
+    event: 'BUYER_CONFIRMED',
+    to: 'FUNDS_RELEASED',
+    description: 'Buyer approved early release directly, funds disbursed to seller',
+  },
+  {
+    from: 'IN_TRANSIT',
+    event: 'BUYER_CONFIRMED',
+    to: 'FUNDS_RELEASED',
+    description: 'Buyer approved early release in transit, funds disbursed to seller',
+  },
+  {
     from: 'IN_TRANSIT',
     event: 'DELIVERED',
     to: 'DELIVERED',

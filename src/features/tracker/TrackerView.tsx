@@ -1,5 +1,6 @@
 import { useOrder } from "@/hooks/useEscrow"
 import { useAppStore } from "@/store/useAppStore"
+import { LifecycleStepperBar } from "./LifecycleStepperBar"
 import { WeightAuditCard } from "./WeightAuditCard"
 import { TransitRoutePreview } from "./TransitRoutePreview"
 import { InspectionClock } from "./InspectionClock"
@@ -142,6 +143,9 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
           </div>
         )}
       </div>
+
+      {/* Interactive Lifecycle Progress Stepper Bar */}
+      <LifecycleStepperBar order={order} />
 
       {/* 48-Hour Inspection Timer & Release / Freeze Controls */}
       <InspectionClock order={order} />

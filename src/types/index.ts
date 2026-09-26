@@ -128,9 +128,12 @@ export interface Dispute {
 export type Locale = 'en' | 'es' | 'fr' | 'de' | 'hi' | 'ja';
 
 export type DemoScenario = 
+  | 'merchant_dropoff'
+  | 'out_for_delivery'
   | 'perfect_delivery' 
   | 'weight_mismatch' 
-  | 'dispute_filed';
+  | 'dispute_filed'
+  | 'release_funds';
 
 export interface CheckoutFormValues {
   cardholderName: string;

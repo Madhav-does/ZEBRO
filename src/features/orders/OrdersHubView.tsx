@@ -209,7 +209,10 @@ export function OrdersHubView() {
                   </span>
 
                   <button
-                    onClick={() => setIsReceiptOpen(true)}
+                    onClick={() => {
+                      setCurrentOrderId(order.id)
+                      setIsReceiptOpen(true)
+                    }}
                     className="text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 text-[11px]"
                   >
                     <span>View Proof Receipt</span>

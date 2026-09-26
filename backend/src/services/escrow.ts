@@ -86,6 +86,18 @@ export const escrowService = {
   },
 
   async releaseEarly(orderId: string) {
+    const existing = await prisma.order.findUnique({ where: { id: orderId } });
+    if (existing && (!existing.scannedWeightG || !existing.deliveredAt)) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          scannedWeightG: existing.scannedWeightG || existing.declaredWeightG,
+          weightAuditResult: existing.weightAuditResult || 'MATCH',
+          deliveredAt: existing.deliveredAt || new Date(),
+        },
+      });
+    }
+
     const updated = await transition(orderId, 'BUYER_CONFIRMED', {
       confirmedBy: 'buyer',
       confirmedAt: new Date().toISOString(),

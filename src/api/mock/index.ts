@@ -242,7 +242,7 @@ export class MockApiClient implements ApiClient {
     return [];
   }
 
-  async triggerDemoScenario(scenario: import('@/types').DemoScenario): Promise<any> {
+  async triggerDemoScenario(scenario: import('@/types').DemoScenario, _orderId?: string): Promise<any> {
     currentOrder = getMockOrder(scenario);
     return { scenario, order: currentOrder };
   }

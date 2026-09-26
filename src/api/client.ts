@@ -126,5 +126,5 @@ export interface ApiClient {
    * POST /api/v1/demo/scenario
    * Simulates full-stack escrow state transitions for hackathon evaluation.
    */
-  triggerDemoScenario(scenario: import('@/types').DemoScenario): Promise<any>;
+  triggerDemoScenario(scenario: import('@/types').DemoScenario, orderId?: string): Promise<any>;
 }
