@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { useActiveOrders, usePastOrders } from "@/hooks/useEscrow"
 import { TrackerView } from "@/features/tracker/TrackerView"
@@ -8,6 +9,13 @@ export function OrdersHubView() {
   const { ordersSubTab, setOrdersSubTab, setIsReceiptOpen, currentOrderId, setCurrentOrderId } = useAppStore()
   const { data: activeOrders = [] } = useActiveOrders()
   const { data: pastOrdersFromApi = [] } = usePastOrders()
+
+  // Auto-select first active order from database if not set
+  useEffect(() => {
+    if (activeOrders.length > 0 && (!currentOrderId || !activeOrders.some(o => o.id === currentOrderId))) {
+      setCurrentOrderId(activeOrders[0].id)
+    }
+  }, [activeOrders, currentOrderId, setCurrentOrderId])
 
   const defaultPastOrders = [
     {

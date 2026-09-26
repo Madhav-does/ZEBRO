@@ -51,13 +51,16 @@ export function ExploreView({ onBuyListing }: ExploreViewProps) {
     return () => observer.disconnect()
   }, [allListings.length, isLoadingMore])
 
-  const visibleListings: Listing[] = []
+  interface DisplayListing extends Listing {
+    renderKey: string
+  }
+  const visibleListings: DisplayListing[] = []
   if (allListings.length > 0) {
     for (let i = 0; i < displayedCount; i++) {
       const original = allListings[i % allListings.length]
       visibleListings.push({
         ...original,
-        id: `${original.id}_exp_${i}`,
+        renderKey: `${original.id}_exp_${i}`,
       })
     }
   }
@@ -116,7 +119,7 @@ export function ExploreView({ onBuyListing }: ExploreViewProps) {
           <div className="grid grid-cols-2 gap-3">
             {visibleListings.map((item) => (
               <div
-                key={item.id}
+                key={item.renderKey}
                 onClick={() => onBuyListing(item)}
                 className="group cursor-pointer rounded-2xl border border-border/40 bg-card overflow-hidden hover:border-emerald-500/40 transition-all duration-200 flex flex-col justify-between"
               >

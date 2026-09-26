@@ -4,6 +4,7 @@ import { WeightAuditCard } from "./WeightAuditCard"
 import { TransitRoutePreview } from "./TransitRoutePreview"
 import { InspectionClock } from "./InspectionClock"
 import { ChainOfCustodyLedger } from "./ChainOfCustodyLedger"
+import { CarrierSimulatorDrawer } from "./CarrierSimulatorDrawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency } from "@/lib/utils"
 import {
@@ -97,13 +98,17 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
             </div>
           </div>
 
-          <button
-            onClick={() => setIsReceiptOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/50 hover:bg-muted text-xs font-semibold text-foreground transition-all"
-          >
-            <FileText className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">View Receipt</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <CarrierSimulatorDrawer order={order} />
+
+            <button
+              onClick={() => setIsReceiptOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/50 hover:bg-muted text-xs font-semibold text-foreground transition-all"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Receipt</span>
+            </button>
+          </div>
         </div>
 
         {/* Dynamic Scenario Advisory Note */}

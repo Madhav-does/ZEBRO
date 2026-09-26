@@ -28,12 +28,16 @@ export function DemoModeBadge() {
     setSimulatingSlowNetwork,
     setActiveTab,
     setIsReceiptOpen,
+    setShellTab,
+    setOrdersSubTab,
   } = useAppStore()
 
   const queryClient = useQueryClient()
 
   const handleSelectScenario = async (scId: DemoScenario) => {
     setDemoScenario(scId)
+    setShellTab("orders")
+    setOrdersSubTab("active")
     setActiveTab("tracker")
     try {
       await api.triggerDemoScenario(scId)
@@ -80,7 +84,7 @@ export function DemoModeBadge() {
   ]
 
   return (
-    <div className="fixed bottom-4 left-4 z-50">
+    <div className="fixed bottom-20 left-3 z-50">
       {/* Expanded panel */}
       {isExpanded && (
         <div className="mb-2 w-80 rounded-2xl border border-border/80 bg-card/95 p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-2 duration-200">

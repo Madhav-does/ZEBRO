@@ -17,7 +17,7 @@ export function CheckoutCTA({
   totalAmount,
   onSuccessCallback,
 }: CheckoutCTAProps) {
-  const { setActiveTab } = useAppStore()
+  const { setActiveTab, setShellTab, setOrdersSubTab } = useAppStore()
   const createOrderMutation = useCreateOrder()
   const [isSuccess, setIsSuccess] = useState(false)
 
@@ -33,9 +33,11 @@ export function CheckoutCTA({
           setIsSuccess(true)
           setTimeout(() => {
             onSuccessCallback?.()
+            setShellTab("orders")
+            setOrdersSubTab("active")
             setActiveTab("tracker")
             setIsSuccess(false)
-          }, 800)
+          }, 600)
         },
       }
     )

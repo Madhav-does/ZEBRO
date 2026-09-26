@@ -46,15 +46,17 @@ export function HomeFeedView({ onBuyListing }: HomeFeedViewProps) {
     return () => observer.disconnect()
   }, [allListings.length, isLoadingMore])
 
-  // Prepare visible listings: if displayedCount > allListings.length, wrap around to ensure truly infinite scrolling
-  const visibleListings: Listing[] = []
+  // Prepare visible listings: preserve original database ID so checkout matches real SQLite listing
+  interface DisplayListing extends Listing {
+    renderKey: string
+  }
+  const visibleListings: DisplayListing[] = []
   if (allListings.length > 0) {
     for (let i = 0; i < displayedCount; i++) {
       const original = allListings[i % allListings.length]
-      // Create a unique key for repeated items
       visibleListings.push({
         ...original,
-        id: `${original.id}_idx_${i}`,
+        renderKey: `${original.id}_feed_${i}`,
       })
     }
   }
@@ -77,7 +79,7 @@ export function HomeFeedView({ onBuyListing }: HomeFeedViewProps) {
       ) : (
         <div className="divide-y divide-border/20">
           {visibleListings.map((listing, index) => (
-            <React.Fragment key={listing.id}>
+            <React.Fragment key={listing.renderKey}>
               <IGProductCard listing={listing} onBuy={onBuyListing} />
               {/* Insert Platform Fraud Widget after the 2nd item */}
               {index === 1 && <PlatformFraudFeedWidget />}

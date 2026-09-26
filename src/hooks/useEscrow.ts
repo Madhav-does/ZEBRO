@@ -37,8 +37,14 @@ export function useOrder(orderId?: string) {
     // Include scenario in key to trigger reactive refetch on demo scenario toggle
     queryKey: [...ESCROW_KEYS.order(targetId), scenario],
     queryFn: () => api.getOrder(targetId),
-    staleTime: 5 * 1000,
-    refetchInterval: 5000, // Poll state automatically so backend FSM events update live
+    staleTime: 2 * 1000,
+    refetchInterval: (query) => {
+      const status = query.state.data?.escrowStatus;
+      if (status === 'funds_released' || status === 'refunded') {
+        return false;
+      }
+      return 3000; // Live backend FSM reactive polling
+    },
   });
 }
 
@@ -50,7 +56,8 @@ export function useWeightAudit(orderId?: string) {
   return useQuery({
     queryKey: [...ESCROW_KEYS.weightAudit(targetId), scenario],
     queryFn: () => api.getWeightAudit(targetId),
-    staleTime: 5 * 1000,
+    staleTime: 3 * 1000,
+    refetchInterval: 4000,
   });
 }
 
@@ -58,8 +65,8 @@ export function useActiveOrders() {
   return useQuery({
     queryKey: ESCROW_KEYS.activeOrders,
     queryFn: () => api.getActiveOrders(),
-    staleTime: 5 * 1000,
-    refetchInterval: 10000,
+    staleTime: 3 * 1000,
+    refetchInterval: 4000,
   });
 }
 
@@ -67,7 +74,7 @@ export function usePastOrders() {
   return useQuery({
     queryKey: ESCROW_KEYS.pastOrders,
     queryFn: () => api.getPastOrders(),
-    staleTime: 15 * 1000,
+    staleTime: 10 * 1000,
   });
 }
 
@@ -75,17 +82,20 @@ export function useCreateOrder() {
   const queryClient = useQueryClient();
   const setActiveTab = useAppStore((state) => state.setActiveTab);
   const setCurrentOrderId = useAppStore((state) => state.setCurrentOrderId);
+  const setShellTab = useAppStore((state) => state.setShellTab);
+  const setOrdersSubTab = useAppStore((state) => state.setOrdersSubTab);
 
   return useMutation({
     mutationFn: (payload: { productId: string; shippingAddress: string; paymentMethod: string }) =>
       api.createOrder(payload),
     onSuccess: (order: Order) => {
       setCurrentOrderId(order.id);
+      setShellTab('orders');
+      setOrdersSubTab('active');
+      setActiveTab('tracker');
       queryClient.setQueryData([...ESCROW_KEYS.order(order.id), useAppStore.getState().demoScenario], order);
       queryClient.invalidateQueries({ queryKey: ['order'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      // Switch to tracker tab to show live escrow
-      setActiveTab('tracker');
     },
   });
 }
