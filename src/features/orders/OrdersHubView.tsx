@@ -17,45 +17,18 @@ export function OrdersHubView() {
     }
   }, [activeOrders, currentOrderId, setCurrentOrderId])
 
-  const defaultPastOrders = [
-    {
-      id: "ord_tl_882194",
-      title: "Handmade Ceramic Mug & Saucer Set",
-      seller: "urban_ceramics",
-      price: 42.00,
-      image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=80",
-      status: "Released to Seller",
-      date: "May 18, 2026",
-      verifiedWeight: 0.38,
-      txHash: "0x892a...c01f"
-    },
-    {
-      id: "ord_tl_771920",
-      title: "Vintage Italian Leather Crossbody Bag",
-      seller: "retro_leather_co",
-      price: 85.00,
-      image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&auto=format&fit=crop&q=80",
-      status: "Released to Seller",
-      date: "May 10, 2026",
-      verifiedWeight: 0.62,
-      txHash: "0x33b1...e45a"
-    }
-  ]
-
   const activeCount = activeOrders.length
-  const pastOrdersList = pastOrdersFromApi.length > 0 
-    ? pastOrdersFromApi.map(o => ({
-        id: o.id,
-        title: o.product.title,
-        seller: o.seller.handle,
-        price: o.product.price + o.product.shippingFee,
-        image: o.product.images[0] || 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80',
-        status: o.escrowStatus === 'funds_released' ? 'Released to Seller' : o.escrowStatus,
-        date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        verifiedWeight: o.weightAudit.actualKg,
-        txHash: o.escrowVaultAddress ? `${o.escrowVaultAddress.slice(0, 6)}...${o.escrowVaultAddress.slice(-4)}` : '0x8f3a...b12a'
-      }))
-    : defaultPastOrders
+  const pastOrdersList = pastOrdersFromApi.map(o => ({
+    id: o.id,
+    title: o.product.title,
+    seller: o.seller.handle,
+    price: o.product.price + o.product.shippingFee,
+    image: o.product.images[0] || 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80',
+    status: o.escrowStatus === 'funds_released' ? 'Released to Seller' : o.escrowStatus,
+    date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    verifiedWeight: o.weightAudit.actualKg,
+    txHash: o.escrowVaultAddress ? `${o.escrowVaultAddress.slice(0, 6)}...${o.escrowVaultAddress.slice(-4)}` : '0x8f3a...b12a'
+  }))
 
   return (
     <div className="pb-24 pt-2 px-4 max-w-md mx-auto space-y-4">
@@ -171,63 +144,81 @@ export function OrdersHubView() {
             Settled Escrow Transactions
           </p>
 
-          {pastOrdersList.map((order) => (
-            <div
-              key={order.id}
-              className="p-3.5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm space-y-3 shadow-xs"
-            >
-              <div className="flex items-start gap-3">
-                <img
-                  src={order.image}
-                  alt={order.title}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80"
-                  }}
-                  className="w-14 h-14 rounded-xl object-cover border border-border/50 shrink-0"
-                />
+          {pastOrdersList.length === 0 ? (
+            <div className="p-8 text-center rounded-3xl border border-dashed border-border/80 bg-card/40 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-800/60 text-zinc-400 mx-auto flex items-center justify-center">
+                <Package className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-bold text-foreground">No Past Orders</h4>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                When an escrow transaction is finalized and funds are released, settled transaction receipts appear here.
+              </p>
+              <button
+                onClick={() => setShellTab("home")}
+                className="px-4 py-2 rounded-xl bg-card border border-border text-foreground hover:bg-muted font-bold text-xs transition-colors"
+              >
+                Discover Verified Creator Goods
+              </button>
+            </div>
+          ) : (
+            pastOrdersList.map((order) => (
+              <div
+                key={order.id}
+                className="p-3.5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm space-y-3 shadow-xs"
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={order.image}
+                    alt={order.title}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&auto=format&fit=crop&q=80"
+                    }}
+                    className="w-14 h-14 rounded-xl object-cover border border-border/50 shrink-0"
+                  />
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-bold text-foreground truncate">
-                      {order.title}
-                    </span>
-                    <span className="text-xs font-mono font-bold text-foreground shrink-0">
-                      ${order.price.toFixed(2)}
-                    </span>
-                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-foreground truncate">
+                        {order.title}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-foreground shrink-0">
+                        ${order.price.toFixed(2)}
+                      </span>
+                    </div>
 
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    @{order.seller} · {order.date}
-                  </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      @{order.seller} · {order.date}
+                    </p>
 
-                  <div className="flex items-center gap-1.5 mt-2">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/25">
-                      <CheckCircle2 className="w-3 h-3" />
-                      {order.status}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-zinc-800/40 px-1.5 py-0.5 rounded border border-border/40">
-                      <Scale className="w-2.5 h-2.5 text-emerald-400" />
-                      {order.verifiedWeight} kg
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/25">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {order.status}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-zinc-800/40 px-1.5 py-0.5 rounded border border-border/40">
+                        <Scale className="w-2.5 h-2.5 text-emerald-400" />
+                        {order.verifiedWeight} kg
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px]">
-                <span className="font-mono text-muted-foreground text-[10px]">
-                  Tx: {order.txHash}
-                </span>
+                <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px]">
+                  <span className="font-mono text-muted-foreground text-[10px]">
+                    Tx: {order.txHash}
+                  </span>
 
-                <button
-                  onClick={() => setIsReceiptOpen(true)}
-                  className="text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 text-[11px]"
-                >
-                  <span>View Proof Receipt</span>
-                  <ExternalLink className="w-3 h-3" />
-                </button>
+                  <button
+                    onClick={() => setIsReceiptOpen(true)}
+                    className="text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 text-[11px]"
+                  >
+                    <span>View Proof Receipt</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
     </div>

@@ -91,6 +91,7 @@ export interface Order {
   trackingEvents: TrackingEvent[];
   weightAudit: WeightAudit;
   inspectionHoursTotal: number;
+  inspectionWindowSeconds?: number;
   inspectionRemainingSeconds: number;
   deliveryOtp: string;
   carrierName: string;

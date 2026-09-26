@@ -1,5 +1,6 @@
 import { Order as PrismaOrder, User, Listing, EscrowEvent, Dispute } from '@prisma/client';
 import { EscrowState } from '../fsm/transitions.js';
+import { timers } from '../fsm/timers.js';
 
 export type FullOrder = PrismaOrder & {
   seller: User;
@@ -50,12 +51,13 @@ export function formatOrderResponse(order: FullOrder) {
   const isMatch = order.weightAuditResult === 'MATCH';
   const isDispute = order.status === 'ESCROW_FROZEN' || !!order.dispute;
 
+  const windowSec = timers.getWindowSeconds();
   let remainingSec = 0;
   if (order.status === 'DELIVERED' && order.inspectionDeadline) {
     const diff = Math.floor((new Date(order.inspectionDeadline).getTime() - Date.now()) / 1000);
     remainingSec = diff > 0 ? diff : 0;
   } else if (order.status === 'DELIVERED') {
-    remainingSec = 47 * 3600 + 58 * 60 + 24;
+    remainingSec = windowSec;
   }
 
   const events = (order.events || []).map((evt, idx) => ({
@@ -101,8 +103,9 @@ export function formatOrderResponse(order: FullOrder) {
     trackingNumber: order.easypostTrackerId || 'EP-9400-1092-8821',
     carrierName: order.carrier ? `${order.carrier} Priority Mail Insured` : 'USPS Priority Mail Insured',
     deliveryOtp: '482-901',
-    inspectionHoursTotal: 48,
-    inspectionRemainingSeconds: remainingSec,
+    inspectionHoursTotal: windowSec >= 3600 ? Math.round(windowSec / 3600) : Number((windowSec / 3600).toFixed(2)),
+    inspectionWindowSeconds: windowSec,
+    inspectionRemainingSeconds: order.status === 'DELIVERED' ? remainingSec : windowSec,
 
     seller: {
       id: order.seller.id,
@@ -210,8 +213,11 @@ function formatEventTitle(eventType: string, isAnomaly: boolean, isDispute: bool
       return 'Carrier Intake & Scale Audit: ANOMALY';
     case 'IN_TRANSIT':
       return 'In Transit — EasyPost Live Telemetry';
-    case 'DELIVERED':
-      return 'Delivered — 48-Hour Inspection Clock Active';
+    case 'DELIVERED': {
+      const windowSec = timers.getWindowSeconds();
+      const unit = windowSec >= 3600 ? `${Math.round(windowSec / 3600)}-Hour` : `${windowSec}-Second`;
+      return `Delivered — ${unit} Inspection Clock Active`;
+    }
     case 'INSPECTION_EXPIRED':
     case 'BUYER_CONFIRMED':
     case 'FUNDS_RELEASED':

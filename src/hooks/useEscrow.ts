@@ -30,13 +30,14 @@ export function useProduct(productId: string = 'prod_ceramic_vase_01') {
 
 export function useOrder(orderId?: string) {
   const storeOrderId = useAppStore((state) => state.currentOrderId);
-  const targetId = orderId || storeOrderId || 'ord_tl_8829104';
+  const targetId = orderId || storeOrderId;
   const scenario = useAppStore((state) => state.demoScenario);
   
   return useQuery({
     // Include scenario in key to trigger reactive refetch on demo scenario toggle
-    queryKey: [...ESCROW_KEYS.order(targetId), scenario],
-    queryFn: () => api.getOrder(targetId),
+    queryKey: [...ESCROW_KEYS.order(targetId || ''), scenario],
+    queryFn: () => (targetId ? api.getOrder(targetId) : Promise.reject('No order ID')),
+    enabled: !!targetId,
     staleTime: 2 * 1000,
     refetchInterval: (query) => {
       const status = query.state.data?.escrowStatus;
@@ -50,12 +51,13 @@ export function useOrder(orderId?: string) {
 
 export function useWeightAudit(orderId?: string) {
   const storeOrderId = useAppStore((state) => state.currentOrderId);
-  const targetId = orderId || storeOrderId || 'ord_tl_8829104';
+  const targetId = orderId || storeOrderId;
   const scenario = useAppStore((state) => state.demoScenario);
 
   return useQuery({
-    queryKey: [...ESCROW_KEYS.weightAudit(targetId), scenario],
-    queryFn: () => api.getWeightAudit(targetId),
+    queryKey: [...ESCROW_KEYS.weightAudit(targetId || ''), scenario],
+    queryFn: () => (targetId ? api.getWeightAudit(targetId) : Promise.reject('No order ID')),
+    enabled: !!targetId,
     staleTime: 3 * 1000,
     refetchInterval: 4000,
   });

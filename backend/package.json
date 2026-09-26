@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:push": "prisma db push",
     "seed": "tsx src/seed.ts",
+    "clear-orders": "tsx src/clearOrders.ts",
     "test": "vitest run"
   },
   "keywords": [

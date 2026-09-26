@@ -10,6 +10,7 @@ import { Seller, Product, Order, WeightAudit, DisputePayload, Dispute, DemoScena
 export const ENV = {
   USE_MOCK_API: (import.meta as any).env?.VITE_USE_MOCK_API === 'true' ? true : false,
   API_BASE_URL: (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:4000/api/v1',
+  INSPECTION_WINDOW_SECONDS: parseInt((import.meta as any).env?.VITE_INSPECTION_WINDOW_SECONDS || '48', 10),
 };
 
 const mockFallback = new MockApiClient();

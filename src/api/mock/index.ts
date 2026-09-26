@@ -234,9 +234,7 @@ export class MockApiClient implements ApiClient {
 
   async getActiveOrders(): Promise<Order[]> {
     await simulateNetworkConditions();
-    const scenario = useAppStore.getState().demoScenario;
-    if (!currentOrder) currentOrder = getMockOrder(scenario);
-    return [currentOrder];
+    return currentOrder ? [currentOrder] : [];
   }
 
   async getPastOrders(): Promise<Order[]> {

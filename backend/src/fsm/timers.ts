@@ -6,7 +6,7 @@ let pollerInterval: NodeJS.Timeout | null = null;
 export const timers = {
   getWindowSeconds(): number {
     const envVal = process.env.INSPECTION_WINDOW_SECONDS;
-    return envVal ? parseInt(envVal, 10) : 30; // 30s default for demo reactivity
+    return envVal ? parseInt(envVal, 10) : 48; // 48s default for demo reactivity
   },
 
   async scheduleInspectionTimer(orderId: string, customSeconds?: number): Promise<void> {

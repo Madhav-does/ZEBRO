@@ -108,7 +108,7 @@ export const useAppStore = create<AppState>((set) => ({
   setExploreCategory: (exploreCategory) => set({ exploreCategory }),
   exploreSearchQuery: '',
   setExploreSearchQuery: (exploreSearchQuery) => set({ exploreSearchQuery }),
-  currentOrderId: 'ord_tl_8829104',
+  currentOrderId: '',
   setCurrentOrderId: (currentOrderId) => set({ currentOrderId }),
   backendConnected: false,
   setBackendConnected: (backendConnected) => set({ backendConnected }),

@@ -212,4 +212,14 @@ export async function orderRoutes(fastify: FastifyInstance) {
   fastify.get('/escrow/:orderId/weight-audit', async (request: FastifyRequest<{ Params: { orderId: string } }>) => {
     return escrowService.getWeightAudit(request.params.orderId);
   });
+
+  // DELETE /orders — Clear all orders and reset escrow state
+  fastify.delete('/orders', async (_request: FastifyRequest, reply: FastifyReply) => {
+    await prisma.pendingTimer.deleteMany({});
+    await prisma.dispute.deleteMany({});
+    await prisma.escrowEvent.deleteMany({});
+    await prisma.order.deleteMany({});
+    await prisma.idempotencyKey.deleteMany({});
+    return reply.send({ success: true, message: 'All orders and escrow states successfully cleared' });
+  });
 }

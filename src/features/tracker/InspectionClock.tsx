@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { Order } from "@/types"
 import { useReleaseEscrow } from "@/hooks/useEscrow"
 import { useAppStore } from "@/store/useAppStore"
+import { ENV } from "@/api"
 import {
   Clock,
   KeyRound,
@@ -27,14 +28,22 @@ export function InspectionClock({ order }: InspectionClockProps) {
   const isInspecting = order.escrowStatus === "delivered_inspecting"
   const isPendingDelivery = order.escrowStatus === "payment_locked" || order.escrowStatus === "in_transit"
 
+  // Configured window from environment variable or order payload
+  const configuredWindowSeconds = order.inspectionWindowSeconds || ENV.INSPECTION_WINDOW_SECONDS || 48
+  const windowLabel = configuredWindowSeconds >= 3600
+    ? `${Math.round(configuredWindowSeconds / 3600)}-Hour`
+    : `${configuredWindowSeconds}-Second`
+  const windowUnit = configuredWindowSeconds >= 3600
+    ? `${Math.round(configuredWindowSeconds / 3600)}h`
+    : `${configuredWindowSeconds}s`
+
   // Initial calculation based on current order state
   const getInitialSeconds = () => {
     if (isReleased) return 0
-    if (order.inspectionRemainingSeconds && order.inspectionRemainingSeconds > 0) {
+    if (isInspecting && order.inspectionRemainingSeconds !== undefined && order.inspectionRemainingSeconds !== null) {
       return order.inspectionRemainingSeconds
     }
-    if (isInspecting) return 47 * 3600 + 58 * 60 + 24
-    return 48 * 3600 // Full 48 hours queued
+    return configuredWindowSeconds
   }
 
   const [secondsRemaining, setSecondsRemaining] = useState<number>(getInitialSeconds)
@@ -43,14 +52,16 @@ export function InspectionClock({ order }: InspectionClockProps) {
   useEffect(() => {
     if (isReleased) {
       setSecondsRemaining(0)
-    } else if (order.inspectionRemainingSeconds && order.inspectionRemainingSeconds > 0) {
-      setSecondsRemaining(order.inspectionRemainingSeconds)
     } else if (isInspecting) {
-      setSecondsRemaining((prev) => (prev > 0 && prev < 48 * 3600 ? prev : 47 * 3600 + 58 * 60 + 24))
+      if (order.inspectionRemainingSeconds !== undefined && order.inspectionRemainingSeconds !== null) {
+        setSecondsRemaining(order.inspectionRemainingSeconds)
+      } else {
+        setSecondsRemaining((prev) => (prev > 0 && prev <= configuredWindowSeconds ? prev : configuredWindowSeconds))
+      }
     } else {
-      setSecondsRemaining(48 * 3600)
+      setSecondsRemaining(configuredWindowSeconds)
     }
-  }, [order.id, order.escrowStatus, order.inspectionRemainingSeconds, isReleased, isInspecting])
+  }, [order.id, order.escrowStatus, order.inspectionRemainingSeconds, isReleased, isInspecting, configuredWindowSeconds])
 
   // Live ticking countdown simulation while actively inspecting
   useEffect(() => {
@@ -73,8 +84,7 @@ export function InspectionClock({ order }: InspectionClockProps) {
   const minutes = Math.floor((secondsRemaining % 3600) / 60)
   const seconds = secondsRemaining % 60
 
-  // 48 hours total in seconds = 172,800
-  const maxSeconds = 48 * 3600
+  const maxSeconds = configuredWindowSeconds
   const progressPct = isPendingDelivery
     ? 100
     : isReleased
@@ -96,7 +106,7 @@ export function InspectionClock({ order }: InspectionClockProps) {
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-emerald-400" />
           <h3 className="font-bold text-sm sm:text-base text-foreground">
-            {isPendingDelivery ? "48-Hour Inspection Window" : "Live Inspection Window"}
+            {isPendingDelivery ? `${windowLabel} Inspection Window` : "Live Inspection Window"}
           </h3>
         </div>
         <span
@@ -193,7 +203,7 @@ export function InspectionClock({ order }: InspectionClockProps) {
                 : isReleased
                 ? "Inspection period elapsed. Payout settled to seller."
                 : isPendingDelivery
-                ? "48h window activates upon verified courier doorstep delivery."
+                ? `${windowUnit} window activates upon verified courier doorstep delivery.`
                 : "Funds auto-release to creator when timer hits 00:00:00."}
             </p>
           </div>
