@@ -149,7 +149,7 @@ export class MockApiClient implements ApiClient {
    * PHASE 2 MARKETPLACE METHODS
    * ========================================================================= */
 
-  async getListings(category?: string, query?: string): Promise<Listing[]> {
+  async getListings(category?: string, query?: string, shuffle?: boolean): Promise<Listing[]> {
     await simulateNetworkConditions();
     let results = [...currentListings];
 
@@ -169,6 +169,10 @@ export class MockApiClient implements ApiClient {
           l.seller.handle.toLowerCase().includes(q) ||
           l.tags.some((t) => t.toLowerCase().includes(q))
       );
+    }
+
+    if (shuffle) {
+      results = [...results].sort(() => Math.random() - 0.5);
     }
 
     return results;

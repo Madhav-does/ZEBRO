@@ -16,20 +16,20 @@ const FALLBACK_THUMB = "https://images.unsplash.com/photo-1612196808214-b8e1d614
 
 export function ExploreView({ onBuyListing }: ExploreViewProps) {
   const { t } = useTranslation()
-  const { exploreCategory, setExploreCategory, exploreSearchQuery, setExploreSearchQuery } = useAppStore()
+  const { exploreCategory, setExploreCategory, exploreSearchQuery, setExploreSearchQuery, feedVersion } = useAppStore()
   const { data: allListings = [], isLoading } = useListings(
     exploreCategory === "All" ? undefined : exploreCategory,
     exploreSearchQuery || undefined
   )
 
-  const [displayedCount, setDisplayedCount] = useState<number>(6)
+  const [displayedCount, setDisplayedCount] = useState<number>(8)
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  // Reset displayed count on category or search change
+  // Reset displayed count on category, search, or feedVersion change
   useEffect(() => {
-    setDisplayedCount(6)
-  }, [exploreCategory, exploreSearchQuery])
+    setDisplayedCount(8)
+  }, [exploreCategory, exploreSearchQuery, feedVersion])
 
   // Infinite scroll observer
   useEffect(() => {
@@ -38,10 +38,10 @@ export function ExploreView({ onBuyListing }: ExploreViewProps) {
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0]
-        if (target.isIntersecting && !isLoadingMore) {
+        if (target.isIntersecting && !isLoadingMore && displayedCount < allListings.length) {
           setIsLoadingMore(true)
           setTimeout(() => {
-            setDisplayedCount((prev) => prev + 6)
+            setDisplayedCount((prev) => Math.min(prev + 6, allListings.length))
             setIsLoadingMore(false)
           }, 300)
         }
@@ -51,21 +51,17 @@ export function ExploreView({ onBuyListing }: ExploreViewProps) {
 
     observer.observe(sentinelRef.current)
     return () => observer.disconnect()
-  }, [allListings.length, isLoadingMore])
+  }, [allListings.length, isLoadingMore, displayedCount])
 
   interface DisplayListing extends Listing {
     renderKey: string
   }
-  const visibleListings: DisplayListing[] = []
-  if (allListings.length > 0) {
-    for (let i = 0; i < displayedCount; i++) {
-      const original = allListings[i % allListings.length]
-      visibleListings.push({
-        ...original,
-        renderKey: `${original.id}_exp_${i}`,
-      })
-    }
-  }
+  const visibleListings: DisplayListing[] = allListings
+    .slice(0, displayedCount)
+    .map((original, i) => ({
+      ...original,
+      renderKey: `${original.id}_exp_v${feedVersion}_${i}`,
+    }))
 
   return (
     <div className="pb-24 pt-2 px-4 max-w-md mx-auto space-y-3.5">
@@ -173,12 +169,16 @@ export function ExploreView({ onBuyListing }: ExploreViewProps) {
 
           {/* Infinite Scroll Sentinel */}
           <div ref={sentinelRef} className="py-4 flex justify-center">
-            {isLoadingMore && (
+            {isLoadingMore ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
                 <span>Loading more items...</span>
               </div>
-            )}
+            ) : displayedCount >= allListings.length && allListings.length > 0 ? (
+              <div className="py-3 text-center text-[11px] text-muted-foreground/80">
+                ✓ Showing all {allListings.length} verified listings
+              </div>
+            ) : null}
           </div>
         </div>
       )}

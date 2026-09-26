@@ -63,10 +63,10 @@ export interface ApiClient {
    * ========================================================================= */
 
   /**
-   * GET /api/v1/listings?category=&q=
+   * GET /api/v1/listings?category=&q=&shuffle=
    * Fetches marketplace product listings with category filtering and keyword search.
    */
-  getListings(category?: string, query?: string): Promise<import('@/types').Listing[]>;
+  getListings(category?: string, query?: string, shuffle?: boolean): Promise<import('@/types').Listing[]>;
 
   /**
    * GET /api/v1/marketplace/recently-protected

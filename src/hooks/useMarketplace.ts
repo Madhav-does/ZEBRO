@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
 import { Listing } from '@/types';
+import { useAppStore } from '@/store/useAppStore';
 
 export const MARKETPLACE_KEYS = {
   listings: (category?: string, query?: string) => ['marketplace', 'listings', category || 'all', query || ''] as const,
@@ -13,9 +14,11 @@ export const MARKETPLACE_KEYS = {
 };
 
 export function useListings(category?: string, query?: string) {
+  const feedVersion = useAppStore((state) => state.feedVersion);
+
   return useQuery({
-    queryKey: MARKETPLACE_KEYS.listings(category, query),
-    queryFn: () => api.getListings(category, query),
+    queryKey: [...MARKETPLACE_KEYS.listings(category, query), feedVersion],
+    queryFn: () => api.getListings(category, query, feedVersion > 0),
     staleTime: 60 * 1000,
   });
 }

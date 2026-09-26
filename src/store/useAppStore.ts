@@ -46,6 +46,8 @@ interface AppState {
   setCurrentOrderId: (id: string) => void;
   backendConnected: boolean;
   setBackendConnected: (connected: boolean) => void;
+  feedVersion: number;
+  refreshFeed: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -112,4 +114,6 @@ export const useAppStore = create<AppState>((set) => ({
   setCurrentOrderId: (currentOrderId) => set({ currentOrderId }),
   backendConnected: false,
   setBackendConnected: (backendConnected) => set({ backendConnected }),
+  feedVersion: 0,
+  refreshFeed: () => set((state) => ({ feedVersion: state.feedVersion + 1 })),
 }));

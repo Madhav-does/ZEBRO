@@ -26,9 +26,9 @@ const createCommentSchema = z.object({
 export async function listingRoutes(fastify: FastifyInstance) {
   // GET /listings (and /api/v1/listings)
   fastify.get('/listings', async (request: FastifyRequest<{
-    Querystring: { category?: string; q?: string; tier?: string; verifiedOnly?: string; limit?: string; page?: string; offset?: string };
+    Querystring: { category?: string; q?: string; tier?: string; verifiedOnly?: string; limit?: string; page?: string; offset?: string; shuffle?: string };
   }>) => {
-    const { category, q, tier, verifiedOnly, limit, page, offset } = request.query;
+    const { category, q, tier, verifiedOnly, limit, page, offset, shuffle } = request.query;
 
     const where: any = { status: 'active' };
 
@@ -71,7 +71,11 @@ export async function listingRoutes(fastify: FastifyInstance) {
       skip,
     });
 
-    return items.map((l) => formatListing(l));
+    let results = items.map((l) => formatListing(l));
+    if (shuffle === 'true') {
+      results = [...results].sort(() => Math.random() - 0.5);
+    }
+    return results;
   });
 
   // GET /listings/:id and GET /products/:id (Frontend alias)

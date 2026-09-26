@@ -127,15 +127,16 @@ class RealApiClient implements ApiClient {
     }
   }
 
-  async getListings(category?: string, query?: string): Promise<Listing[]> {
+  async getListings(category?: string, query?: string, shuffle?: boolean): Promise<Listing[]> {
     try {
       const params = new URLSearchParams();
       if (category && category !== 'All') params.append('category', category);
       if (query) params.append('q', query);
+      if (shuffle) params.append('shuffle', 'true');
       const queryStr = params.toString() ? `?${params.toString()}` : '';
       return await this.request<Listing[]>(`/listings${queryStr}`);
     } catch {
-      return mockFallback.getListings(category, query);
+      return mockFallback.getListings(category, query, shuffle);
     }
   }
 
