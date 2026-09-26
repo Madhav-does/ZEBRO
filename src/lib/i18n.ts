@@ -68,6 +68,54 @@ export const translations: Record<Locale, Record<string, string>> = {
     status_delivered_inspecting: 'Delivered — 48h Inspection Active',
     status_funds_released: 'Funds Released to Seller',
     status_dispute_frozen: 'Escrow Frozen — Arbitration Active',
+
+    // Navigation & Shell
+    nav_home: 'Home',
+    nav_explore: 'Explore',
+    nav_orders: 'Orders',
+    nav_inbox: 'Inbox',
+    nav_profile: 'Profile',
+    nav_dashboard: 'Dashboard',
+
+    // Feed & Post Cards
+    buy_with_escrow: 'Buy with Escrow',
+    view_all_comments: 'View all {count} comments',
+    hide_comments: 'Hide comments',
+    add_comment_placeholder: 'Add a comment...',
+    post_comment: 'Post',
+    posting_comment: 'Posting...',
+    likes_count: 'likes',
+    loading_feed: 'Loading Instagram marketplace feed...',
+    scroll_endless: 'Scroll for endless verified marketplace discoveries',
+    loading_more_posts: 'Loading more verified creator posts...',
+    no_listings: 'No listings available in this category.',
+    escrow_badge: 'TRUSTLINK ESCROW',
+
+    // Orders & Tracker
+    active_escrows: 'Active Escrow',
+    past_orders: 'Past Orders',
+    locked_in_vault: 'Locked in Vault',
+    carrier_simulator: 'Carrier Simulator',
+    receipt: 'Receipt',
+    retry_sync: 'Retry Sync',
+    status_escrow_frozen_label: 'Escrow Frozen',
+    status_funds_released_label: 'Funds Released',
+    status_intake_anomaly_label: 'Intake Audit Anomaly',
+    status_delivered_inspecting_label: 'Delivered & Inspecting',
+    status_in_transit_label: 'In Transit',
+    status_escrow_locked_label: 'Escrow Locked',
+    verified_weight_label: 'Postal Scale Verified',
+
+    // Stepper buttons
+    advance_dropoff: 'Simulate Merchant Drop-off & Postal Scale Scan',
+    advance_delivery: 'Simulate Courier Doorstep Delivery',
+    simulate_origin_anomaly: 'Simulate Origin Weight Anomaly (-66% Empty Box)',
+    simulate_transit_tampering: 'Simulate In-Transit Theft (1.24kg ➔ 0.35kg Loss)',
+    reset_to_pass: 'Reset to Legitimate Scale Pass',
+
+    // Search & Filter
+    search_marketplace: 'Search creations, ceramics, apparel...',
+    all_categories: 'All Categories',
   },
   es: {
     tagline: 'Fideicomiso Seguro para Comercio Social',
@@ -127,6 +175,54 @@ export const translations: Record<Locale, Record<string, string>> = {
     status_delivered_inspecting: 'Entregado — Ventana de 48h Activa',
     status_funds_released: 'Fondos Liberados al Vendedor',
     status_dispute_frozen: 'Escrow Congelado — En Arbitraje',
+
+    // Navigation & Shell
+    nav_home: 'Inicio',
+    nav_explore: 'Explorar',
+    nav_orders: 'Pedidos',
+    nav_inbox: 'Mensajes',
+    nav_profile: 'Perfil',
+    nav_dashboard: 'Panel',
+
+    // Feed & Post Cards
+    buy_with_escrow: 'Comprar con Escrow',
+    view_all_comments: 'Ver los {count} comentarios',
+    hide_comments: 'Ocultar comentarios',
+    add_comment_placeholder: 'Añadir un comentario...',
+    post_comment: 'Publicar',
+    posting_comment: 'Publicando...',
+    likes_count: 'me gusta',
+    loading_feed: 'Cargando marketplace de Instagram...',
+    scroll_endless: 'Desplázate para descubrir más productos verificados',
+    loading_more_posts: 'Cargando más publicaciones verificadas...',
+    no_listings: 'No hay artículos en esta categoría.',
+    escrow_badge: 'FIDEICOMISO TRUSTLINK',
+
+    // Orders & Tracker
+    active_escrows: 'Escrow Activo',
+    past_orders: 'Pedidos Anteriores',
+    locked_in_vault: 'Retenido en Bóveda',
+    carrier_simulator: 'Simulador de Envíos',
+    receipt: 'Recibo',
+    retry_sync: 'Reintentar',
+    status_escrow_frozen_label: 'Escrow Congelado',
+    status_funds_released_label: 'Fondos Liberados',
+    status_intake_anomaly_label: 'Anomalía de Recepción',
+    status_delivered_inspecting_label: 'Entregado e Inspeccionando',
+    status_in_transit_label: 'En Tránsito',
+    status_escrow_locked_label: 'Escrow Bloqueado',
+    verified_weight_label: 'Verificado por Báscula Postal',
+
+    // Stepper buttons
+    advance_dropoff: 'Simular Entrega y Escaneo Postal',
+    advance_delivery: 'Simular Entrega a Domicilio',
+    simulate_origin_anomaly: 'Simular Anomalía de Peso Inicial (-66%)',
+    simulate_transit_tampering: 'Simular Robo en Tránsito (1.24kg ➔ 0.35kg)',
+    reset_to_pass: 'Restablecer a Escaneo Correcto',
+
+    // Search & Filter
+    search_marketplace: 'Buscar creaciones, cerámica, ropa...',
+    all_categories: 'Todas las Categorías',
   },
   fr: {
     tagline: 'Séquestre Sécurisé pour le Commerce Social',
@@ -186,6 +282,54 @@ export const translations: Record<Locale, Record<string, string>> = {
     status_delivered_inspecting: 'Livré — Période de 48h Active',
     status_funds_released: 'Fonds Libérés au Vendeur',
     status_dispute_frozen: 'Séquestre Gelé — Arbitrage en Cours',
+
+    // Navigation & Shell
+    nav_home: 'Accueil',
+    nav_explore: 'Explorer',
+    nav_orders: 'Commandes',
+    nav_inbox: 'Messages',
+    nav_profile: 'Profil',
+    nav_dashboard: 'Tableau de bord',
+
+    // Feed & Post Cards
+    buy_with_escrow: 'Acheter avec Séquestre',
+    view_all_comments: 'Voir les {count} commentaires',
+    hide_comments: 'Masquer les commentaires',
+    add_comment_placeholder: 'Ajouter un commentaire...',
+    post_comment: 'Publier',
+    posting_comment: 'Publication...',
+    likes_count: "j'aime",
+    loading_feed: 'Chargement du fil Instagram...',
+    scroll_endless: 'Faites défiler pour découvrir plus de créations',
+    loading_more_posts: 'Chargement d’autres publications...',
+    no_listings: 'Aucun article dans cette catégorie.',
+    escrow_badge: 'SÉQUESTRE TRUSTLINK',
+
+    // Orders & Tracker
+    active_escrows: 'Séquestre Actif',
+    past_orders: 'Commandes Passées',
+    locked_in_vault: 'Sécurisé dans le Coffre',
+    carrier_simulator: 'Simulateur Transporteur',
+    receipt: 'Reçu',
+    retry_sync: 'Réessayer',
+    status_escrow_frozen_label: 'Séquestre Gelé',
+    status_funds_released_label: 'Fonds Libérés',
+    status_intake_anomaly_label: 'Anomalie de Pesée Initiale',
+    status_delivered_inspecting_label: 'Livré & En Inspection',
+    status_in_transit_label: 'En Acheminement',
+    status_escrow_locked_label: 'Séquestre Verrouillé',
+    verified_weight_label: 'Vérifié par la Balance Postale',
+
+    // Stepper buttons
+    advance_dropoff: 'Simuler Dépôt au Guichet & Pesée',
+    advance_delivery: 'Simuler Livraison à Domicile',
+    simulate_origin_anomaly: 'Simuler Anomalie de Poids Initiale (-66%)',
+    simulate_transit_tampering: 'Simuler Vol en Transit (1.24kg ➔ 0.35kg)',
+    reset_to_pass: 'Rétablir la Pesée Conforme',
+
+    // Search & Filter
+    search_marketplace: 'Rechercher créations, céramiques...',
+    all_categories: 'Toutes les Catégories',
   },
   de: {
     tagline: 'Deterministischer Social-Commerce Treuhandservice',
@@ -245,6 +389,54 @@ export const translations: Record<Locale, Record<string, string>> = {
     status_delivered_inspecting: 'Zugestellt — 48h Prüfung Aktiv',
     status_funds_released: 'Geld an Verkäufer Ausgezahlt',
     status_dispute_frozen: 'Treuhand Gesperrt — Schlichtung',
+
+    // Navigation & Shell
+    nav_home: 'Startseite',
+    nav_explore: 'Entdecken',
+    nav_orders: 'Bestellungen',
+    nav_inbox: 'Postfach',
+    nav_profile: 'Profil',
+    nav_dashboard: 'Dashboard',
+
+    // Feed & Post Cards
+    buy_with_escrow: 'Mit Treuhand kaufen',
+    view_all_comments: 'Alle {count} Kommentare ansehen',
+    hide_comments: 'Kommentare ausblenden',
+    add_comment_placeholder: 'Einen Kommentar schreiben...',
+    post_comment: 'Posten',
+    posting_comment: 'Wird gesendet...',
+    likes_count: '"Gefällt mir"',
+    loading_feed: 'Lade Instagram-Marktplatz...',
+    scroll_endless: 'Weiter scrollen für mehr verifizierte Artikel',
+    loading_more_posts: 'Lade weitere Beiträge...',
+    no_listings: 'Keine Artikel in dieser Kategorie.',
+    escrow_badge: 'TRUSTLINK TREUHAND',
+
+    // Orders & Tracker
+    active_escrows: 'Aktives Treuhand',
+    past_orders: 'Vergangene Bestellungen',
+    locked_in_vault: 'Im Tresor gesichert',
+    carrier_simulator: 'Paketdienst-Simulator',
+    receipt: 'Beleg',
+    retry_sync: 'Erneut versuchen',
+    status_escrow_frozen_label: 'Treuhand Gesperrt',
+    status_funds_released_label: 'Geld Ausgezahlt',
+    status_intake_anomaly_label: 'Annahme-Gewichtsabweichung',
+    status_delivered_inspecting_label: 'Zugestellt & Prüfung aktiv',
+    status_in_transit_label: 'Auf dem Transportweg',
+    status_escrow_locked_label: 'Treuhand Gesichert',
+    verified_weight_label: 'Auf Postwaage geeicht',
+
+    // Stepper buttons
+    advance_dropoff: 'Paketabgabe & Waagenscan simulieren',
+    advance_delivery: 'Haustürzuteilung simulieren',
+    simulate_origin_anomaly: 'Paketabgabe-Gewichtsfehler (-66%) simulieren',
+    simulate_transit_tampering: 'Diebstahl im Transit (1.24kg ➔ 0.35kg) simulieren',
+    reset_to_pass: 'Auf regulären Scan zurücksetzen',
+
+    // Search & Filter
+    search_marketplace: 'Kreationen, Keramik, Kleidung suchen...',
+    all_categories: 'Alle Kategorien',
   },
   hi: {
     tagline: 'सोशल कॉमर्स एस्क्रो सुरक्षा और धोखाधड़ी रोकथाम',
@@ -304,6 +496,54 @@ export const translations: Record<Locale, Record<string, string>> = {
     status_delivered_inspecting: 'डिलीवर हुआ — 48 घंटे जांच जारी',
     status_funds_released: 'विक्रेता को पैसे भेजे गए',
     status_dispute_frozen: 'एस्क्रो फ्रीज — जांच जारी',
+
+    // Navigation & Shell
+    nav_home: 'होम',
+    nav_explore: 'एक्सप्लोर',
+    nav_orders: 'ऑर्डर',
+    nav_inbox: 'संदेश',
+    nav_profile: 'प्रोफ़ाइल',
+    nav_dashboard: 'डैशबोर्ड',
+
+    // Feed & Post Cards
+    buy_with_escrow: 'एस्क्रो से खरीदें',
+    view_all_comments: 'सभी {count} टिप्पणियाँ देखें',
+    hide_comments: 'टिप्पणियाँ छिपाएं',
+    add_comment_placeholder: 'एक टिप्पणी जोड़ें...',
+    post_comment: 'पोस्ट करें',
+    posting_comment: 'भेजा जा रहा है...',
+    likes_count: 'पसंद',
+    loading_feed: 'इंस्टाग्राम मार्केटप्लेस लोड हो रहा है...',
+    scroll_endless: 'सत्यापित उत्पाद देखने के लिए नीचे स्क्रॉल करें',
+    loading_more_posts: 'और पोस्ट लोड हो रही हैं...',
+    no_listings: 'इस श्रेणी में कोई आइटम उपलब्ध नहीं है।',
+    escrow_badge: 'ट्रस्टलिंक एस्क्रो',
+
+    // Orders & Tracker
+    active_escrows: 'सक्रिय एस्क्रो',
+    past_orders: 'पिछले ऑर्डर',
+    locked_in_vault: 'तिजोरी में सुरक्षित',
+    carrier_simulator: 'कूरियर सिम्युलेटर',
+    receipt: 'रसीद',
+    retry_sync: 'पुनः प्रयास करें',
+    status_escrow_frozen_label: 'एस्क्रो फ्रीज',
+    status_funds_released_label: 'पैसे जारी किए गए',
+    status_intake_anomaly_label: 'वजन में अंतर पाया गया',
+    status_delivered_inspecting_label: 'डिलीवर हुआ व जांच जारी',
+    status_in_transit_label: 'रास्ते में',
+    status_escrow_locked_label: 'एस्क्रो लॉक',
+    verified_weight_label: 'डाकघर तराजू सत्यापित',
+
+    // Stepper buttons
+    advance_dropoff: 'विक्रेता ड्रॉप-ऑफ व वजन जांच सिमुलेट करें',
+    advance_delivery: 'कूरियर डिलीवरी सिमुलेट करें',
+    simulate_origin_anomaly: 'शुरुआती वजन अंतर (-66%) सिमुलेट करें',
+    simulate_transit_tampering: 'रास्ते में चोरी (1.24kg ➔ 0.35kg) सिमुलेट करें',
+    reset_to_pass: 'सामान्य वजन पास पर रीसेट करें',
+
+    // Search & Filter
+    search_marketplace: 'हस्तशिल्प, कपड़े, आभूषण खोजें...',
+    all_categories: 'सभी श्रेणियां',
   },
   ja: {
     tagline: 'ソーシャルコマース向け確定的エスクロー決済',
@@ -363,9 +603,63 @@ export const translations: Record<Locale, Record<string, string>> = {
     status_delivered_inspecting: '配達完了 — 48時間検品中',
     status_funds_released: '販売者に代金が解放されました',
     status_dispute_frozen: 'エスクロー凍結 — 仲裁中',
+
+    // Navigation & Shell
+    nav_home: 'ホーム',
+    nav_explore: '見つける',
+    nav_orders: '注文',
+    nav_inbox: '受信箱',
+    nav_profile: 'マイページ',
+    nav_dashboard: 'ダッシュボード',
+
+    // Feed & Post Cards
+    buy_with_escrow: 'エスクローで購入',
+    view_all_comments: '全 {count} 件のコメントを表示',
+    hide_comments: 'コメントを非表示',
+    add_comment_placeholder: 'コメントを追加...',
+    post_comment: '投稿する',
+    posting_comment: '投稿中...',
+    likes_count: '件のいいね',
+    loading_feed: 'マーケットプレイスを読み込み中...',
+    scroll_endless: 'スクロールして認証済みアイテムを発見',
+    loading_more_posts: 'さらに投稿を読み込み中...',
+    no_listings: 'このカテゴリには商品がありません。',
+    escrow_badge: 'TRUSTLINK エスクロー',
+
+    // Orders & Tracker
+    active_escrows: '進行中の取引',
+    past_orders: '過去の注文履歴',
+    locked_in_vault: '金庫に保管中',
+    carrier_simulator: '配送シミュレーター',
+    receipt: '受領証',
+    retry_sync: '再読み込み',
+    status_escrow_frozen_label: 'エスクロー凍結',
+    status_funds_released_label: '資金解放済み',
+    status_intake_anomaly_label: '受付計量異常',
+    status_delivered_inspecting_label: '配達完了・検品中',
+    status_in_transit_label: '輸送中',
+    status_escrow_locked_label: 'エスクロー保護中',
+    verified_weight_label: '郵便局カウンター計量済み',
+
+    // Stepper buttons
+    advance_dropoff: '商品持込＆計量スキャンをシミュレート',
+    advance_delivery: '対面配達完了をシミュレート',
+    simulate_origin_anomaly: '初期計量異常（空箱 -66%）をシミュレート',
+    simulate_transit_tampering: '輸送中抜き取り盗難（1.24kg ➔ 0.35kg）をシミュレート',
+    reset_to_pass: '正常な計量合格に戻す',
+
+    // Search & Filter
+    search_marketplace: '作品、陶器、アパレルを検索...',
+    all_categories: 'すべてのカテゴリ',
   },
 };
 
-export function t(key: string, locale: Locale): string {
-  return translations[locale]?.[key] || translations.en[key] || key;
+export function t(key: string, locale: Locale, params?: Record<string, string | number>): string {
+  let val = translations[locale]?.[key] || translations.en[key] || key;
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      val = val.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    });
+  }
+  return val;
 }

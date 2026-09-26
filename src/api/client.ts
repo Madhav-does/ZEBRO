@@ -127,4 +127,16 @@ export interface ApiClient {
    * Simulates full-stack escrow state transitions for hackathon evaluation.
    */
   triggerDemoScenario(scenario: import('@/types').DemoScenario, orderId?: string): Promise<any>;
+
+  /**
+   * GET /api/v1/listings/:id/comments
+   * Retrieves verified discussion comments for a listing.
+   */
+  getComments(listingId: string): Promise<import('@/types').ListingComment[]>;
+
+  /**
+   * POST /api/v1/listings/:id/comments
+   * Posts and persists a new comment to SQLite database.
+   */
+  addComment(listingId: string, text: string, author?: string): Promise<import('@/types').ListingComment>;
 }

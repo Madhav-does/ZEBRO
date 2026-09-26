@@ -5,6 +5,7 @@ import { Listing } from "@/types"
 import { Search, X, ShieldCheck, Scale, Loader2, Sparkles } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/hooks/useTranslation"
 
 interface ExploreViewProps {
   onBuyListing: (listing: Listing) => void
@@ -14,6 +15,7 @@ const CATEGORIES = ["All", "Ceramics", "Apparel", "Prints", "Jewelry", "Home", "
 const FALLBACK_THUMB = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=400&q=80"
 
 export function ExploreView({ onBuyListing }: ExploreViewProps) {
+  const { t } = useTranslation()
   const { exploreCategory, setExploreCategory, exploreSearchQuery, setExploreSearchQuery } = useAppStore()
   const { data: allListings = [], isLoading } = useListings(
     exploreCategory === "All" ? undefined : exploreCategory,
@@ -71,7 +73,7 @@ export function ExploreView({ onBuyListing }: ExploreViewProps) {
       <div className="relative">
         <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
         <Input
-          placeholder="Search escrow-protected goods & creators..."
+          placeholder={t("search_marketplace")}
           value={exploreSearchQuery}
           onChange={(e) => setExploreSearchQuery(e.target.value)}
           className="pl-9 pr-9 h-10 bg-muted/40 rounded-xl border-border/40 text-xs focus-visible:ring-emerald-500"
@@ -99,7 +101,7 @@ export function ExploreView({ onBuyListing }: ExploreViewProps) {
                 : "bg-card border-border/40 text-muted-foreground hover:text-foreground"
             )}
           >
-            {cat}
+            {cat === "All" ? t("all_categories") : cat}
           </button>
         ))}
       </div>

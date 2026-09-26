@@ -1,5 +1,6 @@
 import { useOrder } from "@/hooks/useEscrow"
 import { useAppStore } from "@/store/useAppStore"
+import { useTranslation } from "@/hooks/useTranslation"
 import { LifecycleStepperBar } from "./LifecycleStepperBar"
 import { WeightAuditCard } from "./WeightAuditCard"
 import { TransitRoutePreview } from "./TransitRoutePreview"
@@ -18,6 +19,7 @@ import {
 } from "lucide-react"
 
 export function TrackerView({ orderId }: { orderId?: string } = {}) {
+  const { t } = useTranslation()
   const { demoScenario, setIsReceiptOpen } = useAppStore()
   const { data: order, isLoading, isError, refetch } = useOrder(orderId)
 
@@ -49,7 +51,7 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold hover:bg-muted text-foreground transition-all"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Retry Sync
+          {t("retry_sync")}
         </button>
       </div>
     )
@@ -63,17 +65,17 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
   const getStatusLabel = () => {
     switch (order.escrowStatus) {
       case "dispute_frozen":
-        return "Escrow Frozen"
+        return t("status_escrow_frozen_label")
       case "funds_released":
-        return "Funds Released"
+        return t("status_funds_released_label")
       case "intake_audit":
-        return "Intake Audit Anomaly"
+        return t("status_intake_anomaly_label")
       case "delivered_inspecting":
-        return "Delivered & Inspecting"
+        return t("status_delivered_inspecting_label")
       case "in_transit":
-        return "In Transit"
+        return t("status_in_transit_label")
       default:
-        return "Escrow Locked"
+        return t("status_escrow_locked_label")
     }
   }
 
@@ -96,7 +98,7 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-foreground">
-                {formatCurrency(totalAmount)} Locked in Vault
+                {formatCurrency(totalAmount)} {t("locked_in_vault")}
               </h2>
             </div>
           </div>
@@ -109,7 +111,7 @@ export function TrackerView({ orderId }: { orderId?: string } = {}) {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/50 hover:bg-muted text-xs font-semibold text-foreground transition-all"
             >
               <FileText className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Receipt</span>
+              <span className="hidden sm:inline">{t("receipt")}</span>
             </button>
           </div>
         </div>

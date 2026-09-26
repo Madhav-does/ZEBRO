@@ -38,6 +38,17 @@ model Listing {
   createdAt           DateTime @default(now())
 
   orders              Order[]
+  comments            Comment[]
+}
+
+model Comment {
+  id           String   @id @default(cuid())
+  listingId    String
+  listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  author       String   @default("buyer_verified")
+  authorAvatar String?
+  text         String
+  createdAt    DateTime @default(now())
 }
 
 model Order {

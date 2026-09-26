@@ -3,6 +3,8 @@ import { useAppStore } from "@/store/useAppStore"
 import { ShellTab } from "@/types"
 import { cn } from "@/lib/utils"
 
+import { useTranslation } from "@/hooks/useTranslation"
+
 interface TabConfig {
   id: ShellTab
   label: string
@@ -12,25 +14,26 @@ interface TabConfig {
 
 export function BottomTabBar() {
   const { shellTab, setShellTab, userRole } = useAppStore()
+  const { t } = useTranslation()
 
   const tabs: TabConfig[] = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "explore", label: "Explore", icon: Compass },
+    { id: "home", label: t("nav_home"), icon: Home },
+    { id: "explore", label: t("nav_explore"), icon: Compass },
     { 
       id: "orders", 
-      label: "Orders", 
+      label: t("nav_orders"), 
       icon: ShieldCheck,
       badge: true // Live escrow protection indicator
     },
     { 
       id: "inbox", 
-      label: "Inbox", 
+      label: t("nav_inbox"), 
       icon: Send,
       badge: 2 // 2 unread DMs/disputes
     },
     { 
       id: "profile", 
-      label: userRole === "seller" ? "Dashboard" : "Profile", 
+      label: userRole === "seller" ? t("nav_dashboard") : t("nav_profile"), 
       icon: User 
     },
   ]

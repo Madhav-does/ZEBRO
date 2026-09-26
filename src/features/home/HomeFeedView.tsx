@@ -4,13 +4,15 @@ import { RecentlyProtectedTicker } from "./RecentlyProtectedTicker"
 import { PlatformFraudFeedWidget } from "./PlatformFraudFeedWidget"
 import { IGProductCard } from "./IGProductCard"
 import { Listing } from "@/types"
-import { Loader2, CheckCircle2, Sparkles } from "lucide-react"
+import { Loader2, Sparkles } from "lucide-react"
+import { useTranslation } from "@/hooks/useTranslation"
 
 interface HomeFeedViewProps {
   onBuyListing: (listing: Listing) => void
 }
 
 export function HomeFeedView({ onBuyListing }: HomeFeedViewProps) {
+  const { t } = useTranslation()
   const { data: allListings = [], isLoading } = useListings()
   const [displayedCount, setDisplayedCount] = useState<number>(4)
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false)
@@ -70,11 +72,11 @@ export function HomeFeedView({ onBuyListing }: HomeFeedViewProps) {
       {isLoading ? (
         <div className="py-24 flex flex-col items-center justify-center gap-2.5 text-muted-foreground">
           <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
-          <span className="text-xs font-medium">Loading Instagram marketplace feed...</span>
+          <span className="text-xs font-medium">{t("loading_feed")}</span>
         </div>
       ) : allListings.length === 0 ? (
         <div className="py-20 text-center text-xs text-muted-foreground">
-          No listings available in this category.
+          {t("no_listings")}
         </div>
       ) : (
         <div className="divide-y divide-border/20">
@@ -91,12 +93,12 @@ export function HomeFeedView({ onBuyListing }: HomeFeedViewProps) {
             {isLoadingMore ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
-                <span>Loading more verified creator posts...</span>
+                <span>{t("loading_more_posts")}</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 py-2">
                 <Sparkles className="w-3 h-3 text-emerald-400" />
-                <span>Scroll for endless verified marketplace discoveries</span>
+                <span>{t("scroll_endless")}</span>
               </div>
             )}
           </div>

@@ -18,6 +18,11 @@ const createListingSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+const createCommentSchema = z.object({
+  text: z.string().min(1, 'Comment text cannot be empty'),
+  author: z.string().optional().default('verified_collector'),
+});
+
 export async function listingRoutes(fastify: FastifyInstance) {
   // GET /listings (and /api/v1/listings)
   fastify.get('/listings', async (request: FastifyRequest<{
@@ -57,7 +62,10 @@ export async function listingRoutes(fastify: FastifyInstance) {
 
     const items = await prisma.listing.findMany({
       where,
-      include: { seller: true },
+      include: {
+        seller: true,
+        comments: { orderBy: { createdAt: 'asc' } },
+      },
       orderBy: { createdAt: 'desc' },
       take,
       skip,
@@ -70,7 +78,10 @@ export async function listingRoutes(fastify: FastifyInstance) {
   const handleGetListingById = async (request: FastifyRequest<{ Params: { id: string } }>) => {
     const item = await prisma.listing.findUnique({
       where: { id: request.params.id },
-      include: { seller: true },
+      include: {
+        seller: true,
+        comments: { orderBy: { createdAt: 'asc' } },
+      },
     });
     if (!item) throw new NotFoundError('Listing', request.params.id);
     return formatListing(item);
@@ -78,6 +89,83 @@ export async function listingRoutes(fastify: FastifyInstance) {
 
   fastify.get('/listings/:id', handleGetListingById);
   fastify.get('/products/:id', handleGetListingById);
+
+  // GET /listings/:id/comments and /products/:id/comments
+  const handleGetComments = async (request: FastifyRequest<{ Params: { id: string } }>) => {
+    const listingId = request.params.id;
+    let comments = await prisma.comment.findMany({
+      where: { listingId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // If no comments exist yet, seed initial discussion
+    if (comments.length === 0) {
+      const defaultComments = [
+        {
+          listingId,
+          author: 'alex_curator',
+          authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&h=128&fit=crop&q=80',
+          text: 'Is the declared shipping tare weight verified by carrier scale?',
+        },
+        {
+          listingId,
+          author: 'sarah_design',
+          authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=128&h=128&fit=crop&q=80',
+          text: 'Stunning craftsmanship! Sent you a DM for escrow terms.',
+        },
+      ];
+
+      for (const dc of defaultComments) {
+        await prisma.comment.create({ data: dc });
+      }
+
+      comments = await prisma.comment.findMany({
+        where: { listingId },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+
+    return comments.map((c) => ({
+      id: c.id,
+      author: c.author,
+      authorAvatar: c.authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&h=128&fit=crop&q=80',
+      text: c.text,
+      createdAt: c.createdAt.toISOString(),
+    }));
+  };
+
+  fastify.get('/listings/:id/comments', handleGetComments);
+  fastify.get('/products/:id/comments', handleGetComments);
+
+  // POST /listings/:id/comments and /products/:id/comments
+  const handleCreateComment = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const listingId = request.params.id;
+    const body = createCommentSchema.parse(request.body || {});
+
+    // Verify listing exists
+    const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+    if (!listing) throw new NotFoundError('Listing', listingId);
+
+    const comment = await prisma.comment.create({
+      data: {
+        listingId,
+        author: body.author || 'verified_buyer',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop&q=80',
+        text: body.text.trim(),
+      },
+    });
+
+    return reply.status(201).send({
+      id: comment.id,
+      author: comment.author,
+      authorAvatar: comment.authorAvatar,
+      text: comment.text,
+      createdAt: comment.createdAt.toISOString(),
+    });
+  };
+
+  fastify.post('/listings/:id/comments', handleCreateComment);
+  fastify.post('/products/:id/comments', handleCreateComment);
 
   // POST /listings
   fastify.post('/listings', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -167,6 +255,14 @@ function formatListing(l: any) {
     declaredWeightKg: l.declaredWeightG / 1000,
     likesCount: 142,
     isEscrowGuaranteed: true,
+    comments: (l.comments || []).map((c: any) => ({
+      id: c.id,
+      author: c.author,
+      authorAvatar: c.authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&h=128&fit=crop&q=80',
+      text: c.text,
+      createdAt: c.createdAt.toISOString ? c.createdAt.toISOString() : new Date(c.createdAt).toISOString(),
+    })),
+    commentsCount: l.comments ? l.comments.length : 0,
     createdAt: l.createdAt.toISOString(),
     tags: [l.category.toLowerCase(), 'escrowprotected', 'verified'],
   };

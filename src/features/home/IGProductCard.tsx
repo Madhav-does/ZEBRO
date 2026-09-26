@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   Heart,
   MessageCircle,
@@ -12,11 +12,14 @@ import {
   ChevronRight,
   Music,
   Smile,
+  Loader2,
 } from "lucide-react"
-import { Listing } from "@/types"
+import { Listing, ListingComment } from "@/types"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/hooks/useTranslation"
+import { api } from "@/api"
 
 interface IGProductCardProps {
   listing: Listing
@@ -26,6 +29,7 @@ interface IGProductCardProps {
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=800&q=80"
 
 export function IGProductCard({ listing, onBuy }: IGProductCardProps) {
+  const { t } = useTranslation()
   const [isLiked, setIsLiked] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [likesCount, setLikesCount] = useState(listing.likesCount)
@@ -33,10 +37,27 @@ export function IGProductCard({ listing, onBuy }: IGProductCardProps) {
   const [showHeartBurst, setShowHeartBurst] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
-  const [comments, setComments] = useState<string[]>([
-    "Is the declared shipping tare weight verified by carrier scale?",
-    "Stunning craftsmanship! Sent you a DM.",
-  ])
+  const [comments, setComments] = useState<ListingComment[]>(listing.comments || [])
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [hasLoadedComments, setHasLoadedComments] = useState(false)
+
+  // Fetch comments from backend on mount or when opening comments
+  useEffect(() => {
+    let isMounted = true
+    if (listing.id && !hasLoadedComments) {
+      api.getComments(listing.id)
+        .then((fetched) => {
+          if (isMounted && fetched && fetched.length > 0) {
+            setComments(fetched)
+            setHasLoadedComments(true)
+          }
+        })
+        .catch((err) => console.warn("[Comments] Could not fetch remote comments:", err))
+    }
+    return () => {
+      isMounted = false
+    }
+  }, [listing.id, hasLoadedComments])
 
   const lastTapRef = useRef<number>(0)
   const images = listing.images && listing.images.length > 0 ? listing.images : [FALLBACK_IMAGE]
@@ -69,11 +90,32 @@ export function IGProductCard({ listing, onBuy }: IGProductCardProps) {
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
   }
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!commentText.trim()) return
-    setComments((prev) => [...prev, commentText.trim()])
+    const trimmed = commentText.trim()
+    if (!trimmed || isSubmittingComment) return
+
+    setIsSubmittingComment(true)
     setCommentText("")
+
+    // Optimistically add to UI
+    const tempComment: ListingComment = {
+      id: "temp_" + Date.now(),
+      author: "verified_buyer",
+      authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop&q=80",
+      text: trimmed,
+      createdAt: new Date().toISOString(),
+    }
+    setComments((prev) => [...prev, tempComment])
+
+    try {
+      const saved = await api.addComment(listing.id, trimmed, "verified_buyer")
+      setComments((prev) => prev.map((c) => (c.id === tempComment.id ? saved : c)))
+    } catch (err) {
+      console.error("[Comments] Failed to persist comment to backend:", err)
+    } finally {
+      setIsSubmittingComment(false)
+    }
   }
 
   return (
@@ -271,7 +313,7 @@ export function IGProductCard({ listing, onBuy }: IGProductCardProps) {
       <div className="px-4 pt-2 space-y-1.5">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-foreground">
-            {likesCount.toLocaleString()} likes
+            {likesCount.toLocaleString()} {t("likes_count")}
           </p>
           <div className="flex items-center gap-1 text-[10px] text-zinc-400 font-mono">
             <Scale className="w-3 h-3 text-emerald-400" />
@@ -300,32 +342,50 @@ export function IGProductCard({ listing, onBuy }: IGProductCardProps) {
             onClick={() => setShowComments(!showComments)}
             className="hover:underline text-[11px] text-muted-foreground block"
           >
-            {showComments ? "Hide comments" : `View all ${comments.length + 4} comments`}
+            {showComments
+              ? t("hide_comments")
+              : t("view_all_comments", { count: comments.length })}
           </button>
 
           {showComments && (
             <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-border/40 py-1 text-xs">
               {comments.map((c, i) => (
-                <div key={i} className="flex items-start gap-1.5">
-                  <span className="font-semibold text-foreground text-[11px]">buyer_{i + 1}:</span>
-                  <span className="text-zinc-300 text-[11px]">{c}</span>
+                <div key={c.id || i} className="flex items-start gap-1.5 py-0.5">
+                  <img
+                    src={c.authorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=64&h=64&fit=crop&q=80"}
+                    alt={c.author}
+                    className="w-4 h-4 rounded-full object-cover mt-0.5 ring-1 ring-border/40 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-foreground text-[11px] mr-1.5">
+                      {c.author}:
+                    </span>
+                    <span className="text-zinc-300 text-[11px] break-words">{c.text}</span>
+                  </div>
                 </div>
               ))}
 
               <form onSubmit={handleAddComment} className="pt-1.5 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Add a comment..."
+                  placeholder={t("add_comment_placeholder")}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   className="flex-1 bg-muted/40 border border-border/40 rounded-lg px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500/60"
                 />
                 <button
                   type="submit"
-                  disabled={!commentText.trim()}
-                  className="text-xs font-semibold text-emerald-400 disabled:opacity-40"
+                  disabled={!commentText.trim() || isSubmittingComment}
+                  className="text-xs font-semibold text-emerald-400 disabled:opacity-40 flex items-center gap-1"
                 >
-                  Post
+                  {isSubmittingComment ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>{t("posting_comment")}</span>
+                    </>
+                  ) : (
+                    t("post_comment")
+                  )}
                 </button>
               </form>
             </div>
@@ -339,7 +399,9 @@ export function IGProductCard({ listing, onBuy }: IGProductCardProps) {
             className="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs h-10 rounded-xl shadow-sm flex items-center justify-center gap-2 group transition-all active:scale-[0.98]"
           >
             <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
-            <span>Buy with Escrow · ${(listing.price + (listing.shippingFee || 0)).toFixed(2)}</span>
+            <span>
+              {t("buy_with_escrow")} · ${(listing.price + (listing.shippingFee || 0)).toFixed(2)}
+            </span>
           </Button>
         </div>
       </div>

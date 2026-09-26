@@ -224,6 +224,25 @@ class RealApiClient implements ApiClient {
       return mockFallback.triggerDemoScenario(scenario, orderId);
     }
   }
+
+  async getComments(listingId: string): Promise<import('@/types').ListingComment[]> {
+    try {
+      return await this.request<import('@/types').ListingComment[]>(`/listings/${listingId}/comments`);
+    } catch {
+      return mockFallback.getComments(listingId);
+    }
+  }
+
+  async addComment(listingId: string, text: string, author?: string): Promise<import('@/types').ListingComment> {
+    try {
+      return await this.request<import('@/types').ListingComment>(`/listings/${listingId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ text, author }),
+      });
+    } catch {
+      return mockFallback.addComment(listingId, text, author);
+    }
+  }
 }
 
 // Single singleton API instance consumed by all hooks

@@ -4,8 +4,10 @@ import { useActiveOrders, usePastOrders } from "@/hooks/useEscrow"
 import { TrackerView } from "@/features/tracker/TrackerView"
 import { ShieldCheck, Package, CheckCircle2, ExternalLink, Scale } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/hooks/useTranslation"
 
 export function OrdersHubView() {
+  const { t } = useTranslation()
   const { ordersSubTab, setOrdersSubTab, setIsReceiptOpen, currentOrderId, setCurrentOrderId, setShellTab } = useAppStore()
   const { data: activeOrders = [] } = useActiveOrders()
   const { data: pastOrdersFromApi = [] } = usePastOrders()
@@ -47,7 +49,7 @@ export function OrdersHubView() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span>Active Escrow ({activeCount})</span>
+          <span>{t("active_escrows")} ({activeCount})</span>
         </button>
 
         <button
@@ -60,7 +62,7 @@ export function OrdersHubView() {
           )}
         >
           <Package className="w-3.5 h-3.5" />
-          <span>Past Orders ({pastOrdersList.length})</span>
+          <span>{t("past_orders")} ({pastOrdersList.length})</span>
         </button>
       </div>
 

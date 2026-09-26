@@ -172,6 +172,14 @@ export type ListingCategory =
   | 'Tech'
   | 'Leather Goods';
 
+export interface ListingComment {
+  id: string;
+  author: string;
+  authorAvatar?: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -187,6 +195,8 @@ export interface Listing {
   isEscrowGuaranteed: boolean;
   createdAt: string;
   tags: string[];
+  comments?: ListingComment[];
+  commentsCount?: number;
 }
 
 export interface RecentlyProtectedItem {
